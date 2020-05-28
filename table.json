@@ -1,0 +1,16 @@
+{
+	"Test":
+	{
+		"Name":"string",
+		"Uid":"uint64",
+		"cdd":"int32",
+		"dasda":"int32"
+	},
+	"Test2":
+	{
+		"Uid":"uint64",
+		"Lang":"string",
+		"Name2":"string",
+		"Name3":"string"
+	}
+}
