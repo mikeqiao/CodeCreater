@@ -262,6 +262,7 @@ func (c *Class) ManagerInit() {
 	c.ManagerCreateGetFunc()
 	c.ManagerCreateFunc()
 	c.ManagerCreateClose()
+	c.ManagerCreateUpdate()
 }
 
 func (c *Class) ManagerInitPackage() {
@@ -275,9 +276,10 @@ func (c *Class) ManagerInitImport() {
 	//添加包含文件
 	pak := strconv.Quote("sync")
 	c.managerbuff.WriteString("	" + pak + "\n")
+
+	pak2 := strconv.Quote("time")
+	c.managerbuff.WriteString("	" + pak2 + "\n")
 	/*
-		pak2 := strconv.Quote("github.com/mikeqiao/Db/redis")
-		c.managerbuff.WriteString("	" + pak2 + "\n")
 		pak3 := strconv.Quote("strconv")
 		c.managerbuff.WriteString("	" + pak3 + "\n")
 		pak4 := strconv.Quote("fmt")
@@ -290,7 +292,7 @@ func (c *Class) ManagerInitParam() {
 	str2 := fmt.Sprintf("type %v struct {\n", c.managername)
 	c.managerbuff.WriteString(str)
 	c.managerbuff.WriteString(str2)
-	c.managerbuff.WriteString("	close	bool\n")
+	c.managerbuff.WriteString("	closed	bool\n")
 	c.managerbuff.WriteString("	mutex sync.RWMutex\n")
 	str3 := fmt.Sprintf("	data map[uint64]*%v\n", c.name)
 	c.managerbuff.WriteString(str3)
@@ -304,6 +306,7 @@ func (c *Class) ManagerInitNew() {
 	c.managerbuff.WriteString(body)
 	str := fmt.Sprintf("	Manager.data= make(map[uint64]*%v)\n", c.name)
 	c.managerbuff.WriteString(str)
+	c.managerbuff.WriteString("	go Manager.Update()\n")
 	c.managerbuff.WriteString("}\n\n")
 }
 
@@ -378,12 +381,32 @@ func (c *Class) ManagerCreateClose() {
 	c.managerbuff.WriteString(head)
 	c.managerbuff.WriteString("	this.mutex.Lock()\n")
 	c.managerbuff.WriteString("	defer this.mutex.Unlock()\n")
-	c.managerbuff.WriteString("	this.close= true\n")
+	c.managerbuff.WriteString("	this.closed= true\n")
 	c.managerbuff.WriteString("	for k, v := range this.data{\n")
 	c.managerbuff.WriteString("		if nil !=v{\n")
 	c.managerbuff.WriteString("			v.Close()\n")
 	c.managerbuff.WriteString("		}\n")
 	c.managerbuff.WriteString("		delete(this.data, k)\n")
+	c.managerbuff.WriteString("	}\n")
+	c.managerbuff.WriteString("}\n\n")
+}
+
+func (c *Class) ManagerCreateUpdate() {
+	head := fmt.Sprintf("func (this *%v)Update(){\n", c.managername)
+	c.managerbuff.WriteString(head)
+	c.managerbuff.WriteString("	t := time.Tick(500 * time.Millisecond)\n")
+	c.managerbuff.WriteString("	for _ = range t {\n")
+	c.managerbuff.WriteString("		this.mutex.RLock()\n")
+	c.managerbuff.WriteString("		if true == this.closed{\n")
+	c.managerbuff.WriteString("			this.mutex.Unlock()\n")
+	c.managerbuff.WriteString("			break\n")
+	c.managerbuff.WriteString("		}\n")
+	c.managerbuff.WriteString("		for _, v := range this.data{\n")
+	c.managerbuff.WriteString("			if nil !=v{\n")
+	c.managerbuff.WriteString("				v.UpdateData()\n")
+	c.managerbuff.WriteString("			}\n")
+	c.managerbuff.WriteString("		}\n")
+	c.managerbuff.WriteString("		this.mutex.Unlock()\n")
 	c.managerbuff.WriteString("	}\n")
 	c.managerbuff.WriteString("}\n\n")
 }
