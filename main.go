@@ -22,6 +22,7 @@ func Test() {
 	for k, v := range read.Dmap {
 
 		c := class.NewClass(k)
+		c.Lock = true
 		c.InitData(v)
 		c.Init()
 		f := new(file.File)

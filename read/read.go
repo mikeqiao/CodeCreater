@@ -19,5 +19,5 @@ func Init() {
 	if err != nil {
 		log.Fatal("%v", err)
 	}
-	log.Printf("Dmap:%v", Dmap)
+	//	log.Printf("Dmap:%v", Dmap)
 }
