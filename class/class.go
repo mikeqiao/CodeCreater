@@ -11,23 +11,30 @@ import (
 )
 
 type Class struct {
-	name   string
-	params []*p.Param
-	funcs  []*f.Function
-	Lock   bool
-	buff   *bytes.Buffer
+	name        string
+	managername string
+	params      []*p.Param
+	funcs       []*f.Function
+	Lock        bool
+	buff        *bytes.Buffer
+	managerbuff *bytes.Buffer
 }
 
 func NewClass(name string) *Class {
 	c := new(Class)
 	c.name = name
+	c.managername = name + "Manager"
 	c.buff = new(bytes.Buffer)
-
+	c.managerbuff = new(bytes.Buffer)
 	return c
 }
 
 func (c *Class) GetBuff() (b *bytes.Buffer) {
 	return c.buff
+}
+
+func (c *Class) GetManagerBuff() (b *bytes.Buffer) {
+	return c.managerbuff
 }
 
 func (c *Class) InitData(d map[string]string) {
@@ -46,6 +53,7 @@ func (c *Class) Init() {
 	c.CreateNewFunc()
 	c.CreateInitDataFunc()
 	c.CreateUpdateFunc()
+	c.CreateClose()
 	c.InitParamFunc()
 }
 
@@ -226,10 +234,156 @@ func (c *Class) CreateUpdateFunc() {
 		c.buff.WriteString("	this.mutex.RLock()\n")
 		c.buff.WriteString("	defer this.mutex.RUnlock()\n")
 	}
-	c.buff.WriteString("	err:=redis.R.Hash_SetDataMap(this.table, this.changeData)\n")
-	c.buff.WriteString("	if nil != err{\n")
-	c.buff.WriteString("		return\n")
+	c.buff.WriteString("	if len(this.changeData)>0{\n")
+	c.buff.WriteString("		err:=redis.R.Hash_SetDataMap(this.table, this.changeData)\n")
+	c.buff.WriteString("		if nil != err{\n")
+	c.buff.WriteString("			return\n")
+	c.buff.WriteString("		}\n")
+	c.buff.WriteString("		this.changeData= make(map[string]interface{})\n")
 	c.buff.WriteString("	}\n")
-	c.buff.WriteString("	this.changeData= make(map[string]interface{})\n")
 	c.buff.WriteString("}\n\n")
+}
+
+func (c *Class) CreateClose() {
+	head := fmt.Sprintf("func (this *%v)Close() {\n", c.name)
+	c.buff.WriteString(head)
+	c.buff.WriteString("	this.UpdateData()\n")
+	c.buff.WriteString("}\n\n")
+}
+
+//manager
+func (c *Class) ManagerInit() {
+	c.ManagerInitPackage()
+	c.ManagerInitImport()
+	c.ManagerInitParam()
+	c.ManagerInitNew()
+	c.ManagerCreateAddFunc()
+	c.ManagerCreateDelFunc()
+	c.ManagerCreateGetFunc()
+	c.ManagerCreateFunc()
+	c.ManagerCreateClose()
+}
+
+func (c *Class) ManagerInitPackage() {
+	str := "package " + c.name
+	c.managerbuff.WriteString(str)
+	c.managerbuff.WriteString("\n\n")
+}
+
+func (c *Class) ManagerInitImport() {
+	c.managerbuff.WriteString("import (\n")
+	//添加包含文件
+	pak := strconv.Quote("sync")
+	c.managerbuff.WriteString("	" + pak + "\n")
+	/*
+		pak2 := strconv.Quote("github.com/mikeqiao/Db/redis")
+		c.managerbuff.WriteString("	" + pak2 + "\n")
+		pak3 := strconv.Quote("strconv")
+		c.managerbuff.WriteString("	" + pak3 + "\n")
+		pak4 := strconv.Quote("fmt")
+		c.managerbuff.WriteString("	" + pak4 + "\n")*/
+	c.managerbuff.WriteString(")\n\n")
+}
+
+func (c *Class) ManagerInitParam() {
+	str := fmt.Sprintf("var Manager *%v\n\n", c.managername)
+	str2 := fmt.Sprintf("type %v struct {\n", c.managername)
+	c.managerbuff.WriteString(str)
+	c.managerbuff.WriteString(str2)
+	c.managerbuff.WriteString("	close	bool\n")
+	c.managerbuff.WriteString("	mutex sync.RWMutex\n")
+	str3 := fmt.Sprintf("	data map[uint64]*%v\n", c.name)
+	c.managerbuff.WriteString(str3)
+	c.managerbuff.WriteString("}\n\n")
+}
+
+func (c *Class) ManagerInitNew() {
+	head := fmt.Sprintf("func init(){\n")
+	c.managerbuff.WriteString(head)
+	body := fmt.Sprintf("	Manager := new(%v)\n", c.managername)
+	c.managerbuff.WriteString(body)
+	str := fmt.Sprintf("	Manager.data= make(map[uint64]*%v)\n", c.name)
+	c.managerbuff.WriteString(str)
+	c.managerbuff.WriteString("}\n\n")
+}
+
+func (c *Class) ManagerCreateFunc() {
+	head := fmt.Sprintf("func AddData(data *%v){\n", c.name)
+	c.managerbuff.WriteString(head)
+	c.managerbuff.WriteString("	if nil== Manager || nil == data{\n")
+	c.managerbuff.WriteString("		return\n")
+	c.managerbuff.WriteString("	}\n")
+	c.managerbuff.WriteString("	Manager.AddData(data)\n")
+	c.managerbuff.WriteString("}\n\n")
+
+	head = fmt.Sprintf("func DelData(uid uint64)bool{\n")
+	c.managerbuff.WriteString(head)
+	c.managerbuff.WriteString("	if nil== Manager {\n")
+	c.managerbuff.WriteString("		return false\n")
+	c.managerbuff.WriteString("	}\n")
+	c.managerbuff.WriteString("	return Manager.DelData(uid)\n")
+	c.managerbuff.WriteString("}\n\n")
+
+	head = fmt.Sprintf("func GetData(uid uint64) *%v {\n", c.name)
+	c.managerbuff.WriteString(head)
+	c.managerbuff.WriteString("	if nil== Manager {\n")
+	c.managerbuff.WriteString("		return nil\n")
+	c.managerbuff.WriteString("	}\n")
+	c.managerbuff.WriteString("	return Manager.GetData(uid)\n")
+	c.managerbuff.WriteString("}\n\n")
+}
+
+func (c *Class) ManagerCreateAddFunc() {
+	head := fmt.Sprintf("func (this *%v)AddData(d *%v){\n", c.managername, c.name)
+	c.managerbuff.WriteString(head)
+	c.managerbuff.WriteString("	if  nil == d{\n")
+	c.managerbuff.WriteString("		return\n")
+	c.managerbuff.WriteString("	}\n")
+	c.managerbuff.WriteString("	this.mutex.Lock()\n")
+	c.managerbuff.WriteString("	defer this.mutex.Unlock()\n")
+	c.managerbuff.WriteString("	this.data[d.uid]= d\n")
+	c.managerbuff.WriteString("}\n\n")
+}
+
+func (c *Class) ManagerCreateDelFunc() {
+	head := fmt.Sprintf("func (this *%v)DelData(uid uint64)bool{\n", c.managername)
+	c.managerbuff.WriteString(head)
+	c.managerbuff.WriteString("	this.mutex.Lock()\n")
+	c.managerbuff.WriteString("	defer this.mutex.Unlock()\n")
+	c.managerbuff.WriteString("	if  v,ok := this.data[uid];ok{\n")
+	c.managerbuff.WriteString("		if nil !=v{\n")
+	c.managerbuff.WriteString("			v.Close()\n")
+	c.managerbuff.WriteString("		}\n")
+	c.managerbuff.WriteString("		delete(this.data, uid)\n")
+	c.managerbuff.WriteString("		return true\n")
+	c.managerbuff.WriteString("	}\n")
+	c.managerbuff.WriteString("	return false\n")
+	c.managerbuff.WriteString("}\n\n")
+}
+
+func (c *Class) ManagerCreateGetFunc() {
+	head := fmt.Sprintf("func (this *%v)GetData(uid uint64)*%v{\n", c.managername, c.name)
+	c.managerbuff.WriteString(head)
+	c.managerbuff.WriteString("	this.mutex.RLock()\n")
+	c.managerbuff.WriteString("	defer this.mutex.RUnlock()\n")
+	c.managerbuff.WriteString("	if  v,ok := this.data[uid];ok{\n")
+	c.managerbuff.WriteString("		return v\n")
+	c.managerbuff.WriteString("	}\n")
+	c.managerbuff.WriteString("	return nil\n")
+	c.managerbuff.WriteString("}\n\n")
+}
+
+func (c *Class) ManagerCreateClose() {
+	head := fmt.Sprintf("func (this *%v)Close(){\n", c.managername)
+	c.managerbuff.WriteString(head)
+	c.managerbuff.WriteString("	this.mutex.Lock()\n")
+	c.managerbuff.WriteString("	defer this.mutex.Unlock()\n")
+	c.managerbuff.WriteString("	this.close= true\n")
+	c.managerbuff.WriteString("	for k, v := range this.data{\n")
+	c.managerbuff.WriteString("		if nil !=v{\n")
+	c.managerbuff.WriteString("			v.Close()\n")
+	c.managerbuff.WriteString("		}\n")
+	c.managerbuff.WriteString("		delete(this.data, k)\n")
+	c.managerbuff.WriteString("	}\n")
+	c.managerbuff.WriteString("}\n\n")
 }

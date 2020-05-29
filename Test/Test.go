@@ -8,10 +8,10 @@ import (
 )
 
 type Test struct {
+	Name	string
 	Uid	uint64
 	cdd	int32
 	dasda	int32
-	Name	string
 	uid	uint64
 	table	string
 	changeData map[string]interface{}
@@ -28,6 +28,11 @@ func NewTest(uid uint64) *Test{
 
 func (this *Test)InitData() {
 	data, _:=redis.R.Hash_GetAllData(this.table)
+	if d,ok:=data["Name"];ok{
+		dv:=d
+		this.Name= dv
+	}
+
 	if d,ok:=data["Uid"];ok{
 		dv, _:=strconv.ParseUint(d,10,64)
 		this.Uid= dv
@@ -45,21 +50,35 @@ func (this *Test)InitData() {
 		this.dasda= dv
 	}
 
-	if d,ok:=data["Name"];ok{
-		dv:=d
-		this.Name= dv
-	}
-
 }
 
 func (this *Test)UpdateData() {
 	this.mutex.RLock()
 	defer this.mutex.RUnlock()
-	err:=redis.R.Hash_SetDataMap(this.table, this.changeData)
-	if nil != err{
-		return
+	if len(this.changeData)>0{
+		err:=redis.R.Hash_SetDataMap(this.table, this.changeData)
+		if nil != err{
+			return
+		}
+		this.changeData= make(map[string]interface{})
 	}
-	this.changeData= make(map[string]interface{})
+}
+
+func (this *Test)Close() {
+	this.UpdateData()
+}
+
+func(this *Test) SetName(value string){
+	this.mutex.Lock()
+	defer this.mutex.Unlock()
+	this.Name = value
+	this.changeData["Name"]= value
+}
+
+func(this *Test) GetName() string{
+	this.mutex.RLock()
+	defer this.mutex.RUnlock()
+	return this.Name
 }
 
 func(this *Test) SetUid(value uint64){
@@ -99,18 +118,5 @@ func(this *Test) Getdasda() int32{
 	this.mutex.RLock()
 	defer this.mutex.RUnlock()
 	return this.dasda
-}
-
-func(this *Test) SetName(value string){
-	this.mutex.Lock()
-	defer this.mutex.Unlock()
-	this.Name = value
-	this.changeData["Name"]= value
-}
-
-func(this *Test) GetName() string{
-	this.mutex.RLock()
-	defer this.mutex.RUnlock()
-	return this.Name
 }
 

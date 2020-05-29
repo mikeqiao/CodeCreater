@@ -53,11 +53,17 @@ func (this *Test2)InitData() {
 func (this *Test2)UpdateData() {
 	this.mutex.RLock()
 	defer this.mutex.RUnlock()
-	err:=redis.R.Hash_SetDataMap(this.table, this.changeData)
-	if nil != err{
-		return
+	if len(this.changeData)>0{
+		err:=redis.R.Hash_SetDataMap(this.table, this.changeData)
+		if nil != err{
+			return
+		}
+		this.changeData= make(map[string]interface{})
 	}
-	this.changeData= make(map[string]interface{})
+}
+
+func (this *Test2)Close() {
+	this.UpdateData()
 }
 
 func(this *Test2) SetUid(value uint64){
