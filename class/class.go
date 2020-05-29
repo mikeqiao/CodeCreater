@@ -45,6 +45,7 @@ func (c *Class) Init() {
 	c.InitParam()
 	c.CreateNewFunc()
 	c.CreateInitDataFunc()
+	c.CreateUpdateFunc()
 	c.InitParamFunc()
 }
 
@@ -61,13 +62,17 @@ func (c *Class) InitImport() {
 	c.buff.WriteString("	" + pak + "\n")
 	pak2 := strconv.Quote("github.com/mikeqiao/Db/redis")
 	c.buff.WriteString("	" + pak2 + "\n")
+	pak3 := strconv.Quote("strconv")
+	c.buff.WriteString("	" + pak3 + "\n")
+	pak4 := strconv.Quote("fmt")
+	c.buff.WriteString("	" + pak4 + "\n")
 	c.buff.WriteString(")\n\n")
 }
 
 func (c *Class) InitParam() {
 	str := fmt.Sprintf("type %v struct {\n", c.name)
 	c.buff.WriteString(str)
-
+	have := false
 	for _, v := range c.params {
 		if nil != v {
 			c.buff.WriteString("	")
@@ -75,8 +80,15 @@ func (c *Class) InitParam() {
 			c.buff.WriteString("	")
 			c.buff.WriteString(v.Type)
 			c.buff.WriteString("\n")
+			if "uid" == v.Name {
+				have = true
+			}
 		}
 	}
+	if !have {
+		c.buff.WriteString("	uid	uint64\n")
+	}
+	c.buff.WriteString("	table	string\n")
 	c.AddMap()
 	c.AddLock()
 	c.buff.WriteString("}\n\n")
@@ -104,12 +116,17 @@ func (c *Class) InitParamFunc() {
 }
 
 func (c *Class) CreateNewFunc() {
-	head := fmt.Sprintf("func New%v() *%v{\n", c.name, c.name)
+	head := fmt.Sprintf("func New%v(uid uint64) *%v{\n", c.name, c.name)
 	c.buff.WriteString(head)
 
 	body := fmt.Sprintf("	data := new(%v)\n", c.name)
 	c.buff.WriteString(body)
+	c.buff.WriteString("	data.uid= uid\n")
 	c.buff.WriteString("	data.changeData= make(map[string]interface{})\n")
+	namestr := strconv.Quote(c.name + "_")
+	t := fmt.Sprintf("	data.table = %v + fmt.Sprint(data.uid)\n", namestr)
+	c.buff.WriteString(t)
+
 	c.buff.WriteString("	return data\n")
 	c.buff.WriteString("}\n\n")
 }
@@ -117,9 +134,8 @@ func (c *Class) CreateNewFunc() {
 func (c *Class) CreateInitDataFunc() {
 	head := fmt.Sprintf("func (this *%v)InitData() {\n", c.name)
 	c.buff.WriteString(head)
-	t := fmt.Sprintf("	table = %v + _fmt.Sprint(this.uid)\n", c.name)
-	c.buff.WriteString(t)
-	c.buff.WriteString("	data, _:=redis.R.Hash_GetAllData(table)\n")
+
+	c.buff.WriteString("	data, _:=redis.R.Hash_GetAllData(this.table)\n")
 	for _, v := range c.params {
 		if nil != v {
 			namestr := strconv.Quote(v.Name)
@@ -170,9 +186,7 @@ func (c *Class) CreateInitDataFunc() {
 			c.buff.WriteString("	}\n\n")
 		}
 	}
-	body := fmt.Sprintf("	data := new(%v)\n", c.name)
-	c.buff.WriteString(body)
-	c.buff.WriteString("	data.changeData= make(map[string]interface{})\n")
+
 	c.buff.WriteString("}\n\n")
 }
 
@@ -202,5 +216,20 @@ func (c *Class) CreateGetFunc(name, ctype string) {
 
 	body := fmt.Sprintf("	return this.%v\n", name)
 	c.buff.WriteString(body)
+	c.buff.WriteString("}\n\n")
+}
+
+func (c *Class) CreateUpdateFunc() {
+	head := fmt.Sprintf("func (this *%v)UpdateData() {\n", c.name)
+	c.buff.WriteString(head)
+	if c.Lock {
+		c.buff.WriteString("	this.mutex.RLock()\n")
+		c.buff.WriteString("	defer this.mutex.RUnlock()\n")
+	}
+	c.buff.WriteString("	err:=redis.R.Hash_SetDataMap(this.table, this.changeData)\n")
+	c.buff.WriteString("	if nil != err{\n")
+	c.buff.WriteString("		return\n")
+	c.buff.WriteString("	}\n")
+	c.buff.WriteString("	this.changeData= make(map[string]interface{})\n")
 	c.buff.WriteString("}\n\n")
 }

@@ -3,36 +3,31 @@ package Test2
 import (
 	"sync"
 	"github.com/mikeqiao/Db/redis"
+	"strconv"
+	"fmt"
 )
 
 type Test2 struct {
-	Name2	string
-	Name3	string
 	Uid	uint64
 	Lang	string
+	Name2	string
+	Name3	string
+	uid	uint64
+	table	string
 	changeData map[string]interface{}
 	mutex sync.RWMutex
 }
 
-func NewTest2() *Test2{
+func NewTest2(uid uint64) *Test2{
 	data := new(Test2)
+	data.uid= uid
 	data.changeData= make(map[string]interface{})
+	data.table = "Test2_" + fmt.Sprint(data.uid)
 	return data
 }
 
 func (this *Test2)InitData() {
-	table = Test2 + _fmt.Sprint(this.uid)
-	data, _:=redis.R.Hash_GetAllData(table)
-	if d,ok:=data["Name2"];ok{
-		dv:=d
-		this.Name2= dv
-	}
-
-	if d,ok:=data["Name3"];ok{
-		dv:=d
-		this.Name3= dv
-	}
-
+	data, _:=redis.R.Hash_GetAllData(this.table)
 	if d,ok:=data["Uid"];ok{
 		dv, _:=strconv.ParseUint(d,10,64)
 		this.Uid= dv
@@ -43,34 +38,26 @@ func (this *Test2)InitData() {
 		this.Lang= dv
 	}
 
-	data := new(Test2)
-	data.changeData= make(map[string]interface{})
+	if d,ok:=data["Name2"];ok{
+		dv:=d
+		this.Name2= dv
+	}
+
+	if d,ok:=data["Name3"];ok{
+		dv:=d
+		this.Name3= dv
+	}
+
 }
 
-func(this *Test2) SetName2(value string){
-	this.mutex.Lock()
-	defer this.mutex.Unlock()
-	this.Name2 = value
-	this.changeData["Name2"]= value
-}
-
-func(this *Test2) GetName2() string{
+func (this *Test2)UpdateData() {
 	this.mutex.RLock()
 	defer this.mutex.RUnlock()
-	return this.Name2
-}
-
-func(this *Test2) SetName3(value string){
-	this.mutex.Lock()
-	defer this.mutex.Unlock()
-	this.Name3 = value
-	this.changeData["Name3"]= value
-}
-
-func(this *Test2) GetName3() string{
-	this.mutex.RLock()
-	defer this.mutex.RUnlock()
-	return this.Name3
+	err:=redis.R.Hash_SetDataMap(this.table, this.changeData)
+	if nil != err{
+		return
+	}
+	this.changeData= make(map[string]interface{})
 }
 
 func(this *Test2) SetUid(value uint64){
@@ -97,5 +84,31 @@ func(this *Test2) GetLang() string{
 	this.mutex.RLock()
 	defer this.mutex.RUnlock()
 	return this.Lang
+}
+
+func(this *Test2) SetName2(value string){
+	this.mutex.Lock()
+	defer this.mutex.Unlock()
+	this.Name2 = value
+	this.changeData["Name2"]= value
+}
+
+func(this *Test2) GetName2() string{
+	this.mutex.RLock()
+	defer this.mutex.RUnlock()
+	return this.Name2
+}
+
+func(this *Test2) SetName3(value string){
+	this.mutex.Lock()
+	defer this.mutex.Unlock()
+	this.Name3 = value
+	this.changeData["Name3"]= value
+}
+
+func(this *Test2) GetName3() string{
+	this.mutex.RLock()
+	defer this.mutex.RUnlock()
+	return this.Name3
 }
 
