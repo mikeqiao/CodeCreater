@@ -5,19 +5,32 @@ import (
 	"sync"
 )
 
+type Child struct {
+	name   string
+	uid    uint64
+	prefix string
+}
+
 type Mod struct {
 	//包含字段
 	uid  uint64
 	name string
 	//生成字段
 	mutex     sync.RWMutex
+	prefix    string
 	tableName string //表名  Mod_uid
 	changed   bool
+	mychild   *Child                 //包含方法  创建 删除 修改
 	change    map[string]interface{} //记录修改的字段 值
 }
 
-func (m *Mod) Init() {
-	m.change = make(map[string]interface{})
+func (m *Mod) Init(prefix string, fmap map[string]interface{}) {
+	if nil != fmap {
+		m.change = fmap
+	} else {
+		m.change = make(map[string]interface{})
+	}
+	m.prefix = prefix
 }
 
 func (m *Mod) InitData() { //去读redis 获取用户数据

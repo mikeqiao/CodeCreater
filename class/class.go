@@ -66,9 +66,11 @@ func (c *Class) InitPackage() {
 func (c *Class) InitImport() {
 	c.buff.WriteString("import (\n")
 	//添加包含文件
-	pak := strconv.Quote("sync")
-	c.buff.WriteString("	" + pak + "\n")
-	pak2 := strconv.Quote("github.com/mikeqiao/Db/redis")
+	if c.Lock {
+		pak := strconv.Quote("sync")
+		c.buff.WriteString("	" + pak + "\n")
+	}
+	pak2 := strconv.Quote("github.com/mikeqiao/newworld/data")
 	c.buff.WriteString("	" + pak2 + "\n")
 	pak3 := strconv.Quote("strconv")
 	c.buff.WriteString("	" + pak3 + "\n")
@@ -96,8 +98,8 @@ func (c *Class) InitParam() {
 	if !have {
 		c.buff.WriteString("	uid	uint64\n")
 	}
-	c.buff.WriteString("	table	string\n")
-	c.AddMap()
+
+	c.AddUpdate()
 	c.AddLock()
 	c.buff.WriteString("}\n\n")
 }
@@ -108,9 +110,9 @@ func (c *Class) AddLock() {
 	}
 }
 
-func (c *Class) AddMap() {
-
-	c.buff.WriteString("	changeData map[string]interface{}\n")
+func (c *Class) AddUpdate() {
+	c.buff.WriteString("	prefix string\n")
+	c.buff.WriteString("	update *data.UpdateMod\n")
 
 }
 
@@ -124,26 +126,34 @@ func (c *Class) InitParamFunc() {
 }
 
 func (c *Class) CreateNewFunc() {
-	head := fmt.Sprintf("func New%v(uid uint64) *%v{\n", c.name, c.name)
+	head := fmt.Sprintf("func New%v(uid uint64, prefix string, update *data.UpdateMod) *%v{\n", c.name, c.name)
 	c.buff.WriteString(head)
 
-	body := fmt.Sprintf("	data := new(%v)\n", c.name)
+	body := fmt.Sprintf("	d := new(%v)\n", c.name)
 	c.buff.WriteString(body)
-	c.buff.WriteString("	data.uid= uid\n")
-	c.buff.WriteString("	data.changeData= make(map[string]interface{})\n")
+	c.buff.WriteString("	d.uid= uid\n")
+	c.buff.WriteString("	d.prefix= prefix\n")
+	c.buff.WriteString("	if nil != update{\n")
+	c.buff.WriteString("		d.update= update\n")
+	c.buff.WriteString("	}else{\n")
+	c.buff.WriteString("		d.update= new(data.UpdateMod)\n")
 	namestr := strconv.Quote(c.name + "_")
-	t := fmt.Sprintf("	data.table = %v + fmt.Sprint(data.uid)\n", namestr)
+	t := fmt.Sprintf("		table := %v + fmt.Sprint(d.uid)\n", namestr)
 	c.buff.WriteString(t)
+	c.buff.WriteString("		d.update.Init(table)\n")
+	c.buff.WriteString("	}\n")
 
-	c.buff.WriteString("	return data\n")
+	c.buff.WriteString("	return d\n")
 	c.buff.WriteString("}\n\n")
 }
 
 func (c *Class) CreateInitDataFunc() {
 	head := fmt.Sprintf("func (this *%v)InitData() {\n", c.name)
 	c.buff.WriteString(head)
-
-	c.buff.WriteString("	data, _:=redis.R.Hash_GetAllData(this.table)\n")
+	c.buff.WriteString("	if nil == this.update{\n")
+	c.buff.WriteString("		return\n")
+	c.buff.WriteString("	}\n")
+	c.buff.WriteString("	data:= this.update.GetAllData()\n")
 	for _, v := range c.params {
 		if nil != v {
 			namestr := strconv.Quote(v.Name)
@@ -208,7 +218,7 @@ func (c *Class) CreateSetFunc(name, ctype string) {
 	body := fmt.Sprintf("	this.%v = value\n", name)
 	c.buff.WriteString(body)
 	namestr := strconv.Quote(name)
-	add := fmt.Sprintf("	this.changeData[%v]= value\n", namestr)
+	add := fmt.Sprintf("	this.update.AddData(%v, value)\n", namestr)
 	c.buff.WriteString(add)
 	c.buff.WriteString("}\n\n")
 }
@@ -234,12 +244,8 @@ func (c *Class) CreateUpdateFunc() {
 		c.buff.WriteString("	this.mutex.RLock()\n")
 		c.buff.WriteString("	defer this.mutex.RUnlock()\n")
 	}
-	c.buff.WriteString("	if len(this.changeData)>0{\n")
-	c.buff.WriteString("		err:=redis.R.Hash_SetDataMap(this.table, this.changeData)\n")
-	c.buff.WriteString("		if nil != err{\n")
-	c.buff.WriteString("			return\n")
-	c.buff.WriteString("		}\n")
-	c.buff.WriteString("		this.changeData= make(map[string]interface{})\n")
+	c.buff.WriteString("	if nil != this.update{\n")
+	c.buff.WriteString("		this.update.Update()\n")
 	c.buff.WriteString("	}\n")
 	c.buff.WriteString("}\n\n")
 }

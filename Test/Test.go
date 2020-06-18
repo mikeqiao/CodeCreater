@@ -15,7 +15,6 @@ type Test struct {
 	uid	uint64
 	table	string
 	changeData map[string]interface{}
-	mutex sync.RWMutex
 }
 
 func NewTest(uid uint64) *Test{
@@ -53,8 +52,6 @@ func (this *Test)InitData() {
 }
 
 func (this *Test)UpdateData() {
-	this.mutex.RLock()
-	defer this.mutex.RUnlock()
 	if len(this.changeData)>0{
 		err:=redis.R.Hash_SetDataMap(this.table, this.changeData)
 		if nil != err{
@@ -69,54 +66,38 @@ func (this *Test)Close() {
 }
 
 func(this *Test) SetName(value string){
-	this.mutex.Lock()
-	defer this.mutex.Unlock()
 	this.Name = value
 	this.changeData["Name"]= value
 }
 
 func(this *Test) GetName() string{
-	this.mutex.RLock()
-	defer this.mutex.RUnlock()
 	return this.Name
 }
 
 func(this *Test) SetUid(value uint64){
-	this.mutex.Lock()
-	defer this.mutex.Unlock()
 	this.Uid = value
 	this.changeData["Uid"]= value
 }
 
 func(this *Test) GetUid() uint64{
-	this.mutex.RLock()
-	defer this.mutex.RUnlock()
 	return this.Uid
 }
 
 func(this *Test) Setcdd(value int32){
-	this.mutex.Lock()
-	defer this.mutex.Unlock()
 	this.cdd = value
 	this.changeData["cdd"]= value
 }
 
 func(this *Test) Getcdd() int32{
-	this.mutex.RLock()
-	defer this.mutex.RUnlock()
 	return this.cdd
 }
 
 func(this *Test) Setdasda(value int32){
-	this.mutex.Lock()
-	defer this.mutex.Unlock()
 	this.dasda = value
 	this.changeData["dasda"]= value
 }
 
 func(this *Test) Getdasda() int32{
-	this.mutex.RLock()
-	defer this.mutex.RUnlock()
 	return this.dasda
 }
 

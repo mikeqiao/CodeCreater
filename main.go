@@ -22,7 +22,7 @@ func Test() {
 	for k, v := range read.Dmap {
 
 		c := class.NewClass(k)
-		c.Lock = true
+		c.Lock = false
 		c.InitData(v)
 		c.Init()
 		c.ManagerInit()
