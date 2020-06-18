@@ -8,10 +8,10 @@ import (
 )
 
 type Test2 struct {
-	Lang	string
 	Name2	string
 	Name3	string
 	Uid	uint64
+	Lang	string
 	uid	uint64
 	table	string
 	changeData map[string]interface{}
@@ -27,11 +27,6 @@ func NewTest2(uid uint64) *Test2{
 
 func (this *Test2)InitData() {
 	data, _:=redis.R.Hash_GetAllData(this.table)
-	if d,ok:=data["Lang"];ok{
-		dv:=d
-		this.Lang= dv
-	}
-
 	if d,ok:=data["Name2"];ok{
 		dv:=d
 		this.Name2= dv
@@ -45,6 +40,11 @@ func (this *Test2)InitData() {
 	if d,ok:=data["Uid"];ok{
 		dv, _:=strconv.ParseUint(d,10,64)
 		this.Uid= dv
+	}
+
+	if d,ok:=data["Lang"];ok{
+		dv:=d
+		this.Lang= dv
 	}
 
 }
@@ -61,15 +61,6 @@ func (this *Test2)UpdateData() {
 
 func (this *Test2)Close() {
 	this.UpdateData()
-}
-
-func(this *Test2) SetLang(value string){
-	this.Lang = value
-	this.changeData["Lang"]= value
-}
-
-func(this *Test2) GetLang() string{
-	return this.Lang
 }
 
 func(this *Test2) SetName2(value string){
@@ -97,5 +88,14 @@ func(this *Test2) SetUid(value uint64){
 
 func(this *Test2) GetUid() uint64{
 	return this.Uid
+}
+
+func(this *Test2) SetLang(value string){
+	this.Lang = value
+	this.changeData["Lang"]= value
+}
+
+func(this *Test2) GetLang() string{
+	return this.Lang
 }
 
