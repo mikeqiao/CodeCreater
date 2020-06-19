@@ -8,11 +8,11 @@ import (
 )
 
 type Test struct {
-	cdd	int32
-	dasda	int32
 	myData	map[uint64]uint32
 	name	string
 	uid	uint64
+	cdd	int32
+	dasda	int32
 	prefix string
 	update *data.UpdateMod
 }
@@ -31,36 +31,33 @@ func NewTest(uid uint64, prefix string, update *data.UpdateMod) *Test{
 	return d
 }
 
-func(this *Test) Setcdd(value int32){
-	this.update.AddData(this.prefix+"cdd", value)
-	this.cdd = value
-}
-
-func(this *Test) Getcdd() int32{
-	return this.cdd
-}
-
-func(this *Test) Setdasda(value int32){
-	this.update.AddData(this.prefix+"dasda", value)
-	this.dasda = value
-}
-
-func(this *Test) Getdasda() int32{
-	return this.dasda
-}
-
-func(this *Test) AddmyData(key uint64,value uint32){
+func(this *Test) AddmyDataData(key uint64,value uint32){
  	keystr := fmt.Sprint(key)
 	this.update.AddData(this.prefix + "myData." + keystr, value)
 	this.myData[key] = value
 }
 
-func(this *Test) DelmyData(key uint64){
+func(this *Test) DelmyDataData(key uint64){
  	keystr := fmt.Sprint(key)
 	this.update.DelData(this.prefix + "myData." + keystr)
 	if _,ok:=this.myData[key]; ok{
 		delete(this.myData, key)
 	}
+}
+
+func(this *Test) GeTmyDataDataByKey(key uint64) (value uint32) {
+	if v,ok:=this.myData[key]; ok{
+		value = v
+	}
+	return
+}
+
+func(this *Test) GetmyDataDataAll() (d map[uint64]uint32){
+	d = make(map[uint64]uint32)
+	for k, v := range this.myData{
+		d[k] = v
+	}
+	return
 }
 
 func(this *Test) Setname(value string){
@@ -81,10 +78,38 @@ func(this *Test) Getuid() uint64{
 	return this.uid
 }
 
+func(this *Test) Setcdd(value int32){
+	this.update.AddData(this.prefix+"cdd", value)
+	this.cdd = value
+}
+
+func(this *Test) Getcdd() int32{
+	return this.cdd
+}
+
+func(this *Test) Setdasda(value int32){
+	this.update.AddData(this.prefix+"dasda", value)
+	this.dasda = value
+}
+
+func(this *Test) Getdasda() int32{
+	return this.dasda
+}
+
 func (this *Test)InitData(data map[string]string) {
 	if nil == data{
 		return
 	}
+	if d,ok:=data[this.prefix+"name"];ok{
+		dv:=d
+		this.name= dv
+	}
+
+	if d,ok:=data[this.prefix+"uid"];ok{
+		dv, _:=strconv.ParseUint(d,10,64)
+		this.uid= dv
+	}
+
 	if d,ok:=data[this.prefix+"cdd"];ok{
 		dd, _:=strconv.Atoi(d)
 		dv:=int32(dd)
@@ -95,16 +120,6 @@ func (this *Test)InitData(data map[string]string) {
 		dd, _:=strconv.Atoi(d)
 		dv:=int32(dd)
 		this.dasda= dv
-	}
-
-	if d,ok:=data[this.prefix+"name"];ok{
-		dv:=d
-		this.name= dv
-	}
-
-	if d,ok:=data[this.prefix+"uid"];ok{
-		dv, _:=strconv.ParseUint(d,10,64)
-		this.uid= dv
 	}
 
 	this.myData=make(map[uint64]uint32)

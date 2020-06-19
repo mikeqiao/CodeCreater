@@ -613,7 +613,7 @@ func (c *Class) CreateClose() {
 
 func (c *Class) CreateMapFunc(name, ktype, vtype string) {
 	//add func
-	head := fmt.Sprintf("func(this *%v) Add%v(key %v,value %v){\n", c.name, name, ktype, vtype)
+	head := fmt.Sprintf("func(this *%v) Add%vData(key %v,value %v){\n", c.name, name, ktype, vtype)
 	c.buff.WriteString(head)
 	if c.Lock {
 		c.buff.WriteString("	this.mutex.Lock()\n")
@@ -630,7 +630,7 @@ func (c *Class) CreateMapFunc(name, ktype, vtype string) {
 	c.buff.WriteString(body)
 	c.buff.WriteString("}\n\n")
 	//def func
-	head2 := fmt.Sprintf("func(this *%v) Del%v(key %v){\n", c.name, name, ktype)
+	head2 := fmt.Sprintf("func(this *%v) Del%vData(key %v){\n", c.name, name, ktype)
 	c.buff.WriteString(head2)
 	if c.Lock {
 		c.buff.WriteString("	this.mutex.Lock()\n")
@@ -647,6 +647,35 @@ func (c *Class) CreateMapFunc(name, ktype, vtype string) {
 	c.buff.WriteString("	}\n")
 	c.buff.WriteString("}\n\n")
 
+	//get by key
+	head3 := fmt.Sprintf("func(this *%v) GeT%vDataByKey(key %v) (value %v) {\n", c.name, name, ktype, vtype)
+	c.buff.WriteString(head3)
+	if c.Lock {
+		c.buff.WriteString("	this.mutex.Lock()\n")
+		c.buff.WriteString("	defer this.mutex.Unlock()\n")
+	}
+
+	body3 := fmt.Sprintf("	if v,ok:=this.%v[key]; ok{\n", name)
+	c.buff.WriteString(body3)
+	c.buff.WriteString("		value = v\n")
+	c.buff.WriteString("	}\n")
+	c.buff.WriteString("	return\n")
+	c.buff.WriteString("}\n\n")
+	//get all
+	head4 := fmt.Sprintf("func(this *%v) Get%vDataAll() (d map[%v]%v){\n", c.name, name, ktype, vtype)
+	c.buff.WriteString(head4)
+	if c.Lock {
+		c.buff.WriteString("	this.mutex.Lock()\n")
+		c.buff.WriteString("	defer this.mutex.Unlock()\n")
+	}
+	body4 := fmt.Sprintf("	d = make(map[%v]%v)\n", ktype, vtype)
+	c.buff.WriteString(body4)
+	body5 := fmt.Sprintf("	for k, v := range this.%v{\n", name)
+	c.buff.WriteString(body5)
+	c.buff.WriteString("		d[k] = v\n")
+	c.buff.WriteString("	}\n")
+	c.buff.WriteString("	return\n")
+	c.buff.WriteString("}\n\n")
 }
 
 //manager

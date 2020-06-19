@@ -9,12 +9,12 @@ import (
 )
 
 type DataTest2 struct {
-	uid	uint64
 	lang	string
 	name2	string
 	name3	string
 	myTest	*common.Test
 	myData	map[uint32]string
+	uid	uint64
 	prefix string
 	update *data.UpdateMod
 }
@@ -31,15 +31,6 @@ func NewDataTest2(uid uint64, prefix string, update *data.UpdateMod) *DataTest2{
 		d.update.Init(table)
 	}
 	return d
-}
-
-func(this *DataTest2) Setuid(value uint64){
-	this.update.AddData(this.prefix+"uid", value)
-	this.uid = value
-}
-
-func(this *DataTest2) Getuid() uint64{
-	return this.uid
 }
 
 func(this *DataTest2) Setlang(value string){
@@ -77,13 +68,13 @@ func(this *DataTest2) GetmyTest() *common.Test{
 	return this.myTest
 }
 
-func(this *DataTest2) AddmyData(key uint32,value string){
+func(this *DataTest2) AddmyDataData(key uint32,value string){
  	keystr := fmt.Sprint(key)
 	this.update.AddData(this.prefix + "myData." + keystr, value)
 	this.myData[key] = value
 }
 
-func(this *DataTest2) DelmyData(key uint32){
+func(this *DataTest2) DelmyDataData(key uint32){
  	keystr := fmt.Sprint(key)
 	this.update.DelData(this.prefix + "myData." + keystr)
 	if _,ok:=this.myData[key]; ok{
@@ -91,16 +82,35 @@ func(this *DataTest2) DelmyData(key uint32){
 	}
 }
 
+func(this *DataTest2) GeTmyDataDataByKey(key uint32) (value string) {
+	if v,ok:=this.myData[key]; ok{
+		value = v
+	}
+	return
+}
+
+func(this *DataTest2) GetmyDataDataAll() (d map[uint32]string){
+	d = make(map[uint32]string)
+	for k, v := range this.myData{
+		d[k] = v
+	}
+	return
+}
+
+func(this *DataTest2) Setuid(value uint64){
+	this.update.AddData(this.prefix+"uid", value)
+	this.uid = value
+}
+
+func(this *DataTest2) Getuid() uint64{
+	return this.uid
+}
+
 func (this *DataTest2)InitData() {
 	if nil == this.update{
 		return
 	}
 	data:= this.update.GetAllData()
-	if d,ok:=data["uid"];ok{
-		dv, _:=strconv.ParseUint(d,10,64)
-		this.uid= dv
-	}
-
 	if d,ok:=data["lang"];ok{
 		dv:=d
 		this.lang= dv
@@ -114,6 +124,11 @@ func (this *DataTest2)InitData() {
 	if d,ok:=data["name3"];ok{
 		dv:=d
 		this.name3= dv
+	}
+
+	if d,ok:=data["uid"];ok{
+		dv, _:=strconv.ParseUint(d,10,64)
+		this.uid= dv
 	}
 
 	this.myTest= common.NewTest(this.uid, "myTest.", this.update)
