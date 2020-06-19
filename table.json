@@ -4,13 +4,16 @@
 		"Name":"string",
 		"Uid":"uint64",
 		"cdd":"int32",
-		"dasda":"int32"	
+		"dasda":"int32",	
+		"MyData":"map[uint64]uint32"
 	},
-	"Test2":
+	"dataTest2":
 	{
 		"Uid":"uint64",
 		"Lang":"string",
 		"Name2":"string",
-		"Name3":"string"
+		"Name3":"string",
+		"MyTest":"*Test",
+		"MyData":"map[uint32]string"
 	}
 }

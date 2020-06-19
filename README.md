@@ -50,3 +50,13 @@
 	好友
 	队伍
 	公会
+	
+	
+	//规则
+	1 struct   首字母大写
+	2 param    首字母小写
+	3 存库的节点 struct  Data开头
+		创建 InitData UpdateData Close 方法
+	4 不是data开头的struct  别的 struct 的子节点
+	
+	5 map  涉及 add get del 操作

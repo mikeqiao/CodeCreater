@@ -2,6 +2,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 
 	"github.com/mikeqiao/codecreater/class"
@@ -9,13 +10,19 @@ import (
 	"github.com/mikeqiao/codecreater/read"
 )
 
+var Path string
+
+func init() {
+	flag.StringVar(&Path, "path", "default", "common")
+}
 func main() {
 	fmt.Println("Hello World!")
 	/*
 
 	 */
+	flag.Parse() //暂停获取参数
 	read.Init()
-	Test()
+	read.Create(Path)
 }
 
 func Test() {

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
+	"strings"
 
 	p "github.com/mikeqiao/codecreater/param"
 
@@ -13,20 +14,32 @@ import (
 type Class struct {
 	name        string
 	managername string
+	Path        string
 	params      []*p.Param
 	funcs       []*f.Function
 	Lock        bool
+	IsData      bool
+	HaveChield  bool
+	HaveMap     bool
 	buff        *bytes.Buffer
 	managerbuff *bytes.Buffer
 }
 
 func NewClass(name string) *Class {
+	name = strFirstToUpper(name)
 	c := new(Class)
 	c.name = name
 	c.managername = name + "Manager"
 	c.buff = new(bytes.Buffer)
 	c.managerbuff = new(bytes.Buffer)
+	c.CheckName()
 	return c
+}
+
+func (c *Class) CheckName() {
+	if strings.HasPrefix(c.name, "Data") {
+		c.IsData = true
+	}
 }
 
 func (c *Class) GetBuff() (b *bytes.Buffer) {
@@ -40,8 +53,32 @@ func (c *Class) GetManagerBuff() (b *bytes.Buffer) {
 func (c *Class) InitData(d map[string]string) {
 	for k, v := range d {
 		np := new(p.Param)
-		np.Name = k
+		nstr := strFirstToLower(k)
+		np.Name = nstr
 		np.Type = v
+		if CheckBaseType(v) {
+			np.TType = 1
+			np.MTye = v
+		} else {
+
+			is, mtype := CheckStruct(v)
+			if is {
+				np.TType = 2
+				np.MTye = mtype
+				c.HaveChield = true
+			} else if CheckMap(v) {
+				c.HaveMap = true
+				np.TType = 3
+				is, ktype, vtype, mtype := CheckMapStruct(v)
+				if is {
+					np.TType = 4
+					c.HaveChield = true
+				}
+				np.MTye = mtype
+				np.Vtype = vtype
+				np.Ktype = ktype
+			}
+		}
 		c.params = append(c.params, np)
 	}
 }
@@ -51,14 +88,21 @@ func (c *Class) Init() {
 	c.InitImport()
 	c.InitParam()
 	c.CreateNewFunc()
-	c.CreateInitDataFunc()
-	c.CreateUpdateFunc()
-	c.CreateClose()
 	c.InitParamFunc()
+	if c.IsData {
+		c.CreateInitDataFunc()
+		c.CreateUpdateFunc()
+		c.CreateClose()
+	} else {
+		c.CreateInitData2Func()
+	}
 }
 
 func (c *Class) InitPackage() {
 	str := "package " + c.name
+	if !c.IsData {
+		str = "package common"
+	}
 	c.buff.WriteString(str)
 	c.buff.WriteString("\n\n")
 }
@@ -72,8 +116,19 @@ func (c *Class) InitImport() {
 	}
 	pak2 := strconv.Quote("github.com/mikeqiao/newworld/data")
 	c.buff.WriteString("	" + pak2 + "\n")
+
 	pak3 := strconv.Quote("strconv")
 	c.buff.WriteString("	" + pak3 + "\n")
+
+	if c.HaveChield {
+		path := c.Path + "/common"
+		pak5 := strconv.Quote(path)
+		c.buff.WriteString("	" + pak5 + "\n")
+	}
+	if c.HaveMap {
+		pak6 := strconv.Quote("strings")
+		c.buff.WriteString("	" + pak6 + "\n")
+	}
 	pak4 := strconv.Quote("fmt")
 	c.buff.WriteString("	" + pak4 + "\n")
 	c.buff.WriteString(")\n\n")
@@ -85,13 +140,24 @@ func (c *Class) InitParam() {
 	have := false
 	for _, v := range c.params {
 		if nil != v {
+			//先判断是否是基础类型
+			ctype := v.Type
+			if 2 == v.TType {
+				ctype = v.MTye
+			}
+			if 4 == v.TType {
+				ctype = v.MTye
+			}
 			c.buff.WriteString("	")
 			c.buff.WriteString(v.Name)
 			c.buff.WriteString("	")
-			c.buff.WriteString(v.Type)
+			c.buff.WriteString(ctype)
 			c.buff.WriteString("\n")
 			if "uid" == v.Name {
 				have = true
+			}
+			if 2 == v.TType {
+
 			}
 		}
 	}
@@ -118,9 +184,15 @@ func (c *Class) AddUpdate() {
 
 func (c *Class) InitParamFunc() {
 	for _, v := range c.params {
-		if nil != v {
-			c.CreateSetFunc(v.Name, v.Type)
-			c.CreateGetFunc(v.Name, v.Type)
+		if nil != v && 3 != v.TType && 4 != v.TType {
+			c.CreateSetFunc(v.Name, v.MTye, v.TType)
+			c.CreateGetFunc(v.Name, v.MTye)
+		}
+		if nil != v && 3 == v.TType {
+			c.CreateMapFunc(v.Name, v.Ktype, v.Vtype)
+		}
+		if nil != v && 4 == v.TType {
+
 		}
 	}
 }
@@ -147,6 +219,174 @@ func (c *Class) CreateNewFunc() {
 	c.buff.WriteString("}\n\n")
 }
 
+func (c *Class) CreateInitData2Func() {
+	head := fmt.Sprintf("func (this *%v)InitData(data map[string]string) {\n", c.name)
+	c.buff.WriteString(head)
+	c.buff.WriteString("	if nil == data{\n")
+	c.buff.WriteString("		return\n")
+	c.buff.WriteString("	}\n")
+
+	for _, v := range c.params {
+		if nil != v && 1 == v.TType {
+			namestr := strconv.Quote(v.Name)
+			key := fmt.Sprintf("	if d,ok:=data[this.prefix+%v];ok{\n", namestr)
+			c.buff.WriteString(key)
+			dvalue := ""
+			have := true
+			switch v.Type {
+			case "string":
+				dvalue = fmt.Sprintf("		dv:=d\n")
+				c.buff.WriteString(dvalue)
+			case "uint64":
+				dvalue = fmt.Sprintf("		dv, _:=strconv.ParseUint(d,10,64)\n") //strconv.ParseFloat() ParseUint(d,10,64)
+				c.buff.WriteString(dvalue)
+			case "uint32":
+				dvalue = fmt.Sprintf("		dd, _:=strconv.ParseUint(d,10,64)\n")
+				c.buff.WriteString(dvalue)
+				nvalue := fmt.Sprintf("		dv:=uint32(dd)\n")
+				c.buff.WriteString(nvalue)
+			case "int32":
+				dvalue = fmt.Sprintf("		dd, _:=strconv.Atoi(d)\n")
+				c.buff.WriteString(dvalue)
+				nvalue := fmt.Sprintf("		dv:=int32(dd)\n")
+				c.buff.WriteString(nvalue)
+			case "int64":
+				dvalue = fmt.Sprintf("		dv, _:=strconv.ParseInt(d,10,64)\n")
+				c.buff.WriteString(dvalue)
+			case "float64":
+				dvalue = fmt.Sprintf("		dv, _:=strconv.ParseFloat(d,64)\n")
+				c.buff.WriteString(dvalue)
+			case "float32":
+				dvalue = fmt.Sprintf("		dd, _:=strconv.ParseFloat(d,64)\n")
+				c.buff.WriteString(dvalue)
+				nvalue := fmt.Sprintf("		dv:=float32(dd)\n")
+				c.buff.WriteString(nvalue)
+			case "bool":
+				dvalue = fmt.Sprintf("		dv, _:=strconv.ParseBool(d)\n")
+				c.buff.WriteString(dvalue)
+			default:
+				have = false
+			}
+			if have {
+				value := fmt.Sprintf("		this.%v= dv\n", v.Name)
+				c.buff.WriteString(value)
+
+			}
+
+			c.buff.WriteString("	}\n\n")
+		}
+	}
+
+	for _, v := range c.params {
+		if 2 == v.TType {
+			stype := strings.TrimLeft(v.Type, "*")
+			prefix := strconv.Quote("this.prefix" + v.Name + ".")
+			value := fmt.Sprintf("	this.%v= common.New%v(this.uid, %v, this.update)\n", v.Name, stype, prefix)
+			//	value := fmt.Sprintf("		this.%v.\n", v.Name)
+			c.buff.WriteString(value)
+			value2 := fmt.Sprintf("	this.%v.InitData(data)\n", v.Name)
+			c.buff.WriteString(value2)
+
+		}
+	}
+
+	for _, v := range c.params {
+		if 3 == v.TType {
+			tvalue := fmt.Sprintf("	this.%v=make(%v)\n", v.Name, v.MTye)
+			c.buff.WriteString(tvalue)
+			prefix := strconv.Quote(v.Name + ".")
+			c.buff.WriteString("	for k,v:=range data{\n")
+
+			value := fmt.Sprintf("		if strings.HasPrefix(k, this.prefix + %v){\n", prefix)
+			c.buff.WriteString(value)
+			value2 := fmt.Sprintf("			d := strings.TrimLeft(k, this.prefix + %v)\n", prefix)
+			c.buff.WriteString(value2)
+			//key
+			have := true
+			switch v.Ktype {
+			case "string":
+				dvalue := fmt.Sprintf("			dv:=d\n")
+				c.buff.WriteString(dvalue)
+			case "uint64":
+				dvalue := fmt.Sprintf("			dv, _:=strconv.ParseUint(d,10,64)\n") //strconv.ParseFloat() ParseUint(d,10,64)
+				c.buff.WriteString(dvalue)
+			case "uint32":
+				dvalue := fmt.Sprintf("			dd, _:=strconv.ParseUint(d,10,64)\n")
+				c.buff.WriteString(dvalue)
+				nvalue := fmt.Sprintf("			dv:=uint32(dd)\n")
+				c.buff.WriteString(nvalue)
+			case "int32":
+				dvalue := fmt.Sprintf("			dd, _:=strconv.Atoi(d)\n")
+				c.buff.WriteString(dvalue)
+				nvalue := fmt.Sprintf("			dv:=int32(dd)\n")
+				c.buff.WriteString(nvalue)
+			case "int64":
+				dvalue := fmt.Sprintf("			dv, _:=strconv.ParseInt(d,10,64)\n")
+				c.buff.WriteString(dvalue)
+			case "float64":
+				dvalue := fmt.Sprintf("			dv, _:=strconv.ParseFloat(d,64)\n")
+				c.buff.WriteString(dvalue)
+			case "float32":
+				dvalue := fmt.Sprintf("			dd, _:=strconv.ParseFloat(d,64)\n")
+				c.buff.WriteString(dvalue)
+				nvalue := fmt.Sprintf("			dv:=float32(dd)\n")
+				c.buff.WriteString(nvalue)
+			case "bool":
+				dvalue := fmt.Sprintf("			dv, _:=strconv.ParseBool(d)\n")
+				c.buff.WriteString(dvalue)
+			default:
+				have = false
+			}
+
+			have2 := true
+			//value
+			switch v.Vtype {
+			case "string":
+				dvalue := fmt.Sprintf("			dv2:=v\n")
+				c.buff.WriteString(dvalue)
+			case "uint64":
+				dvalue := fmt.Sprintf("			dv2, _:=strconv.ParseUint(v,10,64)\n") //strconv.ParseFloat() ParseUint(d,10,64)
+				c.buff.WriteString(dvalue)
+			case "uint32":
+				dvalue := fmt.Sprintf("			dd2, _:=strconv.ParseUint(v,10,64)\n")
+				c.buff.WriteString(dvalue)
+				nvalue := fmt.Sprintf("			dv2:=uint32(dd2)\n")
+				c.buff.WriteString(nvalue)
+			case "int32":
+				dvalue := fmt.Sprintf("			dd2, _:=strconv.Atoi(v)\n")
+				c.buff.WriteString(dvalue)
+				nvalue := fmt.Sprintf("			dv2:=int32(dd2)\n")
+				c.buff.WriteString(nvalue)
+			case "int64":
+				dvalue := fmt.Sprintf("			dv2, _:=strconv.ParseInt(v,10,64)\n")
+				c.buff.WriteString(dvalue)
+			case "float64":
+				dvalue := fmt.Sprintf("			dv2, _:=strconv.ParseFloat(v,64)\n")
+				c.buff.WriteString(dvalue)
+			case "float32":
+				dvalue := fmt.Sprintf("			dd2, _:=strconv.ParseFloat(v,64)\n")
+				c.buff.WriteString(dvalue)
+				nvalue := fmt.Sprintf("			dv2:=float32(dd2)\n")
+				c.buff.WriteString(nvalue)
+			case "bool":
+				dvalue := fmt.Sprintf("			dv2, _:=strconv.ParseBool(v)\n")
+				c.buff.WriteString(dvalue)
+			default:
+				have2 = false
+			}
+			if have && have2 {
+				value3 := fmt.Sprintf("			this.%v[dv]= dv2\n", v.Name)
+				c.buff.WriteString(value3)
+
+			}
+
+			c.buff.WriteString("		}\n")
+			c.buff.WriteString("	}\n")
+		}
+	}
+	c.buff.WriteString("}\n\n")
+}
+
 func (c *Class) CreateInitDataFunc() {
 	head := fmt.Sprintf("func (this *%v)InitData() {\n", c.name)
 	c.buff.WriteString(head)
@@ -155,7 +395,7 @@ func (c *Class) CreateInitDataFunc() {
 	c.buff.WriteString("	}\n")
 	c.buff.WriteString("	data:= this.update.GetAllData()\n")
 	for _, v := range c.params {
-		if nil != v {
+		if nil != v && 1 == v.TType {
 			namestr := strconv.Quote(v.Name)
 			key := fmt.Sprintf("	if d,ok:=data[%v];ok{\n", namestr)
 			c.buff.WriteString(key)
@@ -204,26 +444,140 @@ func (c *Class) CreateInitDataFunc() {
 			c.buff.WriteString("	}\n\n")
 		}
 	}
+	for _, v := range c.params {
+		if 2 == v.TType {
+			stype := strings.TrimLeft(v.Type, "*")
+			prefix := strconv.Quote(v.Name + ".")
+			value := fmt.Sprintf("	this.%v= common.New%v(this.uid, %v, this.update)\n", v.Name, stype, prefix)
+			//	value := fmt.Sprintf("		this.%v.\n", v.Name)
+			c.buff.WriteString(value)
+			value2 := fmt.Sprintf("	this.%v.InitData(data)\n", v.Name)
+			c.buff.WriteString(value2)
+
+		}
+	}
+
+	for _, v := range c.params {
+		if 3 == v.TType {
+			tvalue := fmt.Sprintf("	this.%v=make(%v)\n", v.Name, v.MTye)
+			c.buff.WriteString(tvalue)
+			prefix := strconv.Quote(v.Name + ".")
+			c.buff.WriteString("	for k,v:=range data{\n")
+
+			value := fmt.Sprintf("		if strings.HasPrefix(k, %v){\n", prefix)
+			c.buff.WriteString(value)
+			value2 := fmt.Sprintf("			d := strings.TrimLeft(k, %v)\n", prefix)
+			c.buff.WriteString(value2)
+			//key
+			have := true
+			switch v.Ktype {
+			case "string":
+				dvalue := fmt.Sprintf("			dv:=d\n")
+				c.buff.WriteString(dvalue)
+			case "uint64":
+				dvalue := fmt.Sprintf("			dv, _:=strconv.ParseUint(d,10,64)\n") //strconv.ParseFloat() ParseUint(d,10,64)
+				c.buff.WriteString(dvalue)
+			case "uint32":
+				dvalue := fmt.Sprintf("			dd, _:=strconv.ParseUint(d,10,64)\n")
+				c.buff.WriteString(dvalue)
+				nvalue := fmt.Sprintf("			dv:=uint32(dd)\n")
+				c.buff.WriteString(nvalue)
+			case "int32":
+				dvalue := fmt.Sprintf("			dd, _:=strconv.Atoi(d)\n")
+				c.buff.WriteString(dvalue)
+				nvalue := fmt.Sprintf("			dv:=int32(dd)\n")
+				c.buff.WriteString(nvalue)
+			case "int64":
+				dvalue := fmt.Sprintf("			dv, _:=strconv.ParseInt(d,10,64)\n")
+				c.buff.WriteString(dvalue)
+			case "float64":
+				dvalue := fmt.Sprintf("			dv, _:=strconv.ParseFloat(d,64)\n")
+				c.buff.WriteString(dvalue)
+			case "float32":
+				dvalue := fmt.Sprintf("			dd, _:=strconv.ParseFloat(d,64)\n")
+				c.buff.WriteString(dvalue)
+				nvalue := fmt.Sprintf("			dv:=float32(dd)\n")
+				c.buff.WriteString(nvalue)
+			case "bool":
+				dvalue := fmt.Sprintf("			dv, _:=strconv.ParseBool(d)\n")
+				c.buff.WriteString(dvalue)
+			default:
+				have = false
+			}
+
+			have2 := true
+			//value
+			switch v.Vtype {
+			case "string":
+				dvalue := fmt.Sprintf("			dv2:=v\n")
+				c.buff.WriteString(dvalue)
+			case "uint64":
+				dvalue := fmt.Sprintf("			dv2, _:=strconv.ParseUint(v,10,64)\n") //strconv.ParseFloat() ParseUint(d,10,64)
+				c.buff.WriteString(dvalue)
+			case "uint32":
+				dvalue := fmt.Sprintf("			dd2, _:=strconv.ParseUint(v,10,64)\n")
+				c.buff.WriteString(dvalue)
+				nvalue := fmt.Sprintf("			dv2:=uint32(dd2)\n")
+				c.buff.WriteString(nvalue)
+			case "int32":
+				dvalue := fmt.Sprintf("			dd2, _:=strconv.Atoi(v)\n")
+				c.buff.WriteString(dvalue)
+				nvalue := fmt.Sprintf("			dv2:=int32(dd2)\n")
+				c.buff.WriteString(nvalue)
+			case "int64":
+				dvalue := fmt.Sprintf("			dv2, _:=strconv.ParseInt(v,10,64)\n")
+				c.buff.WriteString(dvalue)
+			case "float64":
+				dvalue := fmt.Sprintf("			dv2, _:=strconv.ParseFloat(v,64)\n")
+				c.buff.WriteString(dvalue)
+			case "float32":
+				dvalue := fmt.Sprintf("			dd2, _:=strconv.ParseFloat(v,64)\n")
+				c.buff.WriteString(dvalue)
+				nvalue := fmt.Sprintf("			dv2:=float32(dd2)\n")
+				c.buff.WriteString(nvalue)
+			case "bool":
+				dvalue := fmt.Sprintf("			dv2, _:=strconv.ParseBool(v)\n")
+				c.buff.WriteString(dvalue)
+			default:
+				have2 = false
+			}
+			if have && have2 {
+				value3 := fmt.Sprintf("			this.%v[dv]= dv2\n", v.Name)
+				c.buff.WriteString(value3)
+
+			}
+
+			c.buff.WriteString("		}\n")
+			c.buff.WriteString("	}\n")
+		}
+	}
 
 	c.buff.WriteString("}\n\n")
 }
 
-func (c *Class) CreateSetFunc(name, ctype string) {
+func (c *Class) CreateSetFunc(name, ctype string, ttype uint32) {
+	//先判断是否是基础类型
+
 	head := fmt.Sprintf("func(this *%v) Set%v(value %v){\n", c.name, name, ctype)
 	c.buff.WriteString(head)
 	if c.Lock {
 		c.buff.WriteString("	this.mutex.Lock()\n")
 		c.buff.WriteString("	defer this.mutex.Unlock()\n")
 	}
+	if 1 == ttype { //需要判断是否是基础类型
+		//	newname := fmt.Sprintf("this.prefix%v", name)
+		namestr := strconv.Quote(name)
+		add := fmt.Sprintf("	this.update.AddData(this.prefix+%v, value)\n", namestr)
+		c.buff.WriteString(add)
+	}
 	body := fmt.Sprintf("	this.%v = value\n", name)
 	c.buff.WriteString(body)
-	namestr := strconv.Quote(name)
-	add := fmt.Sprintf("	this.update.AddData(%v, value)\n", namestr)
-	c.buff.WriteString(add)
 	c.buff.WriteString("}\n\n")
 }
 
 func (c *Class) CreateGetFunc(name, ctype string) {
+	//先判断是否是基础类型
+
 	head := fmt.Sprintf("func(this *%v) Get%v() %v{\n", c.name, name, ctype)
 	c.buff.WriteString(head)
 
@@ -257,18 +611,58 @@ func (c *Class) CreateClose() {
 	c.buff.WriteString("}\n\n")
 }
 
+func (c *Class) CreateMapFunc(name, ktype, vtype string) {
+	//add func
+	head := fmt.Sprintf("func(this *%v) Add%v(key %v,value %v){\n", c.name, name, ktype, vtype)
+	c.buff.WriteString(head)
+	if c.Lock {
+		c.buff.WriteString("	this.mutex.Lock()\n")
+		c.buff.WriteString("	defer this.mutex.Unlock()\n")
+	}
+
+	prefix := fmt.Sprintf("%v.", name)
+	prefix = strconv.Quote(prefix)
+	c.buff.WriteString(" 	keystr := fmt.Sprint(key)\n")
+	add := fmt.Sprintf("	this.update.AddData(this.prefix + %v + keystr, value)\n", prefix)
+	c.buff.WriteString(add)
+
+	body := fmt.Sprintf("	this.%v[key] = value\n", name)
+	c.buff.WriteString(body)
+	c.buff.WriteString("}\n\n")
+	//def func
+	head2 := fmt.Sprintf("func(this *%v) Del%v(key %v){\n", c.name, name, ktype)
+	c.buff.WriteString(head2)
+	if c.Lock {
+		c.buff.WriteString("	this.mutex.Lock()\n")
+		c.buff.WriteString("	defer this.mutex.Unlock()\n")
+	}
+
+	c.buff.WriteString(" 	keystr := fmt.Sprint(key)\n")
+	add2 := fmt.Sprintf("	this.update.DelData(this.prefix + %v + keystr)\n", prefix)
+	c.buff.WriteString(add2)
+	body1 := fmt.Sprintf("	if _,ok:=this.%v[key]; ok{\n", name)
+	c.buff.WriteString(body1)
+	body2 := fmt.Sprintf("		delete(this.%v, key)\n", name)
+	c.buff.WriteString(body2)
+	c.buff.WriteString("	}\n")
+	c.buff.WriteString("}\n\n")
+
+}
+
 //manager
 func (c *Class) ManagerInit() {
-	c.ManagerInitPackage()
-	c.ManagerInitImport()
-	c.ManagerInitParam()
-	c.ManagerInitNew()
-	c.ManagerCreateAddFunc()
-	c.ManagerCreateDelFunc()
-	c.ManagerCreateGetFunc()
-	c.ManagerCreateFunc()
-	c.ManagerCreateClose()
-	c.ManagerCreateUpdate()
+	if c.IsData {
+		c.ManagerInitPackage()
+		c.ManagerInitImport()
+		c.ManagerInitParam()
+		c.ManagerInitNew()
+		c.ManagerCreateAddFunc()
+		c.ManagerCreateDelFunc()
+		c.ManagerCreateGetFunc()
+		c.ManagerCreateFunc()
+		c.ManagerCreateClose()
+		c.ManagerCreateUpdate()
+	}
 }
 
 func (c *Class) ManagerInitPackage() {

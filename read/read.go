@@ -25,27 +25,40 @@ func Init() {
 	//	log.Printf("Dmap:%v", Dmap)
 }
 
-func Create() {
+func Create(path string) {
 	for k, v := range Dmap {
 
 		c := class.NewClass(k)
-		c.Lock = true
+		c.Lock = false
+		c.Path = path
 		c.InitData(v)
 		c.Init()
 		c.ManagerInit()
 		f := new(file.File)
-		path := k
-		name := path + "/" + k + ".go"
-		name2 := path + "/" + "manager.go"
 
-		f.CreateDir(path)
+		if c.IsData {
+			path := k
+			name := path + "/" + k + ".go"
+			name2 := path + "/" + "manager.go"
+			f.CreateDir(path)
 
-		f.CreateFile(name)
-		f.Write(c.GetBuff())
-		f.Close()
-		f2 := new(file.File)
-		f2.CreateFile(name2)
-		f2.Write(c.GetManagerBuff())
-		f2.Close()
+			f.CreateFile(name)
+			f.Write(c.GetBuff())
+			f.Close()
+			f2 := new(file.File)
+			f2.CreateFile(name2)
+			f2.Write(c.GetManagerBuff())
+			f2.Close()
+		} else {
+			path := "common"
+			name := path + "/" + k + ".go"
+
+			f.CreateDir(path)
+
+			f.CreateFile(name)
+			f.Write(c.GetBuff())
+			f.Close()
+
+		}
 	}
 }

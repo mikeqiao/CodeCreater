@@ -1,25 +1,25 @@
-package Test
+package DataTest2
 
 import (
 	"sync"
 	"time"
 )
 
-var Manager *TestManager
+var Manager *DataTest2Manager
 
-type TestManager struct {
+type DataTest2Manager struct {
 	closed	bool
 	mutex sync.RWMutex
-	data map[uint64]*Test
+	data map[uint64]*DataTest2
 }
 
 func init(){
-	Manager := new(TestManager)
-	Manager.data= make(map[uint64]*Test)
+	Manager := new(DataTest2Manager)
+	Manager.data= make(map[uint64]*DataTest2)
 	go Manager.Update()
 }
 
-func (this *TestManager)AddData(d *Test){
+func (this *DataTest2Manager)AddData(d *DataTest2){
 	if  nil == d{
 		return
 	}
@@ -28,7 +28,7 @@ func (this *TestManager)AddData(d *Test){
 	this.data[d.uid]= d
 }
 
-func (this *TestManager)DelData(uid uint64)bool{
+func (this *DataTest2Manager)DelData(uid uint64)bool{
 	this.mutex.Lock()
 	defer this.mutex.Unlock()
 	if  v,ok := this.data[uid];ok{
@@ -41,7 +41,7 @@ func (this *TestManager)DelData(uid uint64)bool{
 	return false
 }
 
-func (this *TestManager)GetData(uid uint64)*Test{
+func (this *DataTest2Manager)GetData(uid uint64)*DataTest2{
 	this.mutex.RLock()
 	defer this.mutex.RUnlock()
 	if  v,ok := this.data[uid];ok{
@@ -50,7 +50,7 @@ func (this *TestManager)GetData(uid uint64)*Test{
 	return nil
 }
 
-func AddData(data *Test){
+func AddData(data *DataTest2){
 	if nil== Manager || nil == data{
 		return
 	}
@@ -64,14 +64,14 @@ func DelData(uid uint64)bool{
 	return Manager.DelData(uid)
 }
 
-func GetData(uid uint64) *Test {
+func GetData(uid uint64) *DataTest2 {
 	if nil== Manager {
 		return nil
 	}
 	return Manager.GetData(uid)
 }
 
-func (this *TestManager)Close(){
+func (this *DataTest2Manager)Close(){
 	this.mutex.Lock()
 	defer this.mutex.Unlock()
 	this.closed= true
@@ -83,7 +83,7 @@ func (this *TestManager)Close(){
 	}
 }
 
-func (this *TestManager)Update(){
+func (this *DataTest2Manager)Update(){
 	t := time.Tick(500 * time.Millisecond)
 	for _ = range t {
 		this.mutex.RLock()
