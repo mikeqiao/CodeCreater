@@ -1,6 +1,9 @@
 package class
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 func strFirstToUpper(str string) string {
 	if len(str) < 1 {
@@ -84,5 +87,85 @@ func CheckMapStruct(ttype string) (is bool, ktype, vtype, mtype string) {
 		ktype = strings.TrimLeft(d[0], "map[")
 	}
 
+	return
+}
+
+func CheckValueType(ttype string, c *Class) (have bool) {
+	have = true
+	dvalue := ""
+	switch ttype {
+	case "string":
+		dvalue = fmt.Sprintf("		dv:=d\n")
+		c.buff.WriteString(dvalue)
+	case "uint64":
+		dvalue = fmt.Sprintf("		dv, _:=strconv.ParseUint(d,10,64)\n") //strconv.ParseFloat() ParseUint(d,10,64)
+		c.buff.WriteString(dvalue)
+	case "uint32":
+		dvalue = fmt.Sprintf("		dd, _:=strconv.ParseUint(d,10,64)\n")
+		c.buff.WriteString(dvalue)
+		nvalue := fmt.Sprintf("		dv:=uint32(dd)\n")
+		c.buff.WriteString(nvalue)
+	case "int32":
+		dvalue = fmt.Sprintf("		dd, _:=strconv.Atoi(d)\n")
+		c.buff.WriteString(dvalue)
+		nvalue := fmt.Sprintf("		dv:=int32(dd)\n")
+		c.buff.WriteString(nvalue)
+	case "int64":
+		dvalue = fmt.Sprintf("		dv, _:=strconv.ParseInt(d,10,64)\n")
+		c.buff.WriteString(dvalue)
+	case "float64":
+		dvalue = fmt.Sprintf("		dv, _:=strconv.ParseFloat(d,64)\n")
+		c.buff.WriteString(dvalue)
+	case "float32":
+		dvalue = fmt.Sprintf("		dd, _:=strconv.ParseFloat(d,64)\n")
+		c.buff.WriteString(dvalue)
+		nvalue := fmt.Sprintf("		dv:=float32(dd)\n")
+		c.buff.WriteString(nvalue)
+	case "bool":
+		dvalue = fmt.Sprintf("		dv, _:=strconv.ParseBool(d)\n")
+		c.buff.WriteString(dvalue)
+	default:
+		have = false
+	}
+	return
+}
+
+func CheckValueType2(ttype string, c *Class) (have bool) {
+	have = true
+	dvalue := ""
+	switch ttype {
+	case "string":
+		dvalue = fmt.Sprintf("		dv1:=d1\n")
+		c.buff.WriteString(dvalue)
+	case "uint64":
+		dvalue = fmt.Sprintf("		dv1, _:=strconv.ParseUint(d1,10,64)\n") //strconv.ParseFloat() ParseUint(d,10,64)
+		c.buff.WriteString(dvalue)
+	case "uint32":
+		dvalue = fmt.Sprintf("		dd1, _:=strconv.ParseUint(d1,10,64)\n")
+		c.buff.WriteString(dvalue)
+		nvalue := fmt.Sprintf("		dv1:=uint32(dd1)\n")
+		c.buff.WriteString(nvalue)
+	case "int32":
+		dvalue = fmt.Sprintf("		dd1, _:=strconv.Atoi(d1)\n")
+		c.buff.WriteString(dvalue)
+		nvalue := fmt.Sprintf("		dv1:=int32(dd1)\n")
+		c.buff.WriteString(nvalue)
+	case "int64":
+		dvalue = fmt.Sprintf("		dv1, _:=strconv.ParseInt(d1,10,64)\n")
+		c.buff.WriteString(dvalue)
+	case "float64":
+		dvalue = fmt.Sprintf("		dv1, _:=strconv.ParseFloat(d1,64)\n")
+		c.buff.WriteString(dvalue)
+	case "float32":
+		dvalue = fmt.Sprintf("		dd1, _:=strconv.ParseFloat(d1,64)\n")
+		c.buff.WriteString(dvalue)
+		nvalue := fmt.Sprintf("		dv1:=float32(dd1)\n")
+		c.buff.WriteString(nvalue)
+	case "bool":
+		dvalue = fmt.Sprintf("		dv1, _:=strconv.ParseBool(d1)\n")
+		c.buff.WriteString(dvalue)
+	default:
+		have = false
+	}
 	return
 }

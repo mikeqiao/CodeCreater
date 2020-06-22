@@ -90,12 +90,14 @@ func (c *Class) Init() {
 	c.CreateNewFunc()
 	c.InitParamFunc()
 	if c.IsData {
-		c.CreateInitDataFunc()
+		c.CreateInitDataFuncNew()
 		c.CreateUpdateFunc()
 		c.CreateClose()
 	} else {
-		c.CreateInitData2Func()
+		c.CreateInitDataParamFunc()
+
 	}
+	c.CreateDestroy()
 }
 
 func (c *Class) InitPackage() {
@@ -125,7 +127,7 @@ func (c *Class) InitImport() {
 		pak5 := strconv.Quote(path)
 		c.buff.WriteString("	" + pak5 + "\n")
 	}
-	if c.HaveMap {
+	if c.IsData {
 		pak6 := strconv.Quote("strings")
 		c.buff.WriteString("	" + pak6 + "\n")
 	}
@@ -192,7 +194,7 @@ func (c *Class) InitParamFunc() {
 			c.CreateMapFunc(v.Name, v.Ktype, v.Vtype)
 		}
 		if nil != v && 4 == v.TType {
-
+			c.CreateMapStructFunc(v.Name, v.Ktype, v.Vtype)
 		}
 	}
 }
@@ -219,6 +221,7 @@ func (c *Class) CreateNewFunc() {
 	c.buff.WriteString("}\n\n")
 }
 
+/*
 func (c *Class) CreateInitData2Func() {
 	head := fmt.Sprintf("func (this *%v)InitData(data map[string]string) {\n", c.name)
 	c.buff.WriteString(head)
@@ -552,7 +555,265 @@ func (c *Class) CreateInitDataFunc() {
 		}
 	}
 
+	for _, v := range c.params {
+		if 4 == v.TType {
+			tvalue := fmt.Sprintf("	this.%v=make(%v)\n", v.Name, v.MTye)
+			c.buff.WriteString(tvalue)
+			prefix := strconv.Quote(v.Name + ".")
+			c.buff.WriteString("	for k,v:=range data{\n")
+
+			value := fmt.Sprintf("		if strings.HasPrefix(k, %v){\n", prefix)
+			c.buff.WriteString(value)
+			value2 := fmt.Sprintf("			ad := strings.TrimLeft(k, %v)\n", prefix)
+			c.buff.WriteString(value2)
+			dian := strconv.Quote(".")
+			ks := fmt.Sprintf("		dl := strings.Split(ad, %v)\n", dian)
+			c.buff.WriteString(ks)
+			c.buff.WriteString("		if len(dl)<=1 {\n")
+			c.buff.WriteString("			continue\n")
+			c.buff.WriteString("		}\n")
+			c.buff.WriteString("		d := dl[0]\n")
+			//key
+			have := true
+			switch v.Ktype {
+			case "string":
+				dvalue := fmt.Sprintf("		dv:=d\n")
+				c.buff.WriteString(dvalue)
+			case "uint64":
+				dvalue := fmt.Sprintf("		dv, _:=strconv.ParseUint(d,10,64)\n") //strconv.ParseFloat() ParseUint(d,10,64)
+				c.buff.WriteString(dvalue)
+			case "uint32":
+				dvalue := fmt.Sprintf("		dd, _:=strconv.ParseUint(d,10,64)\n")
+				c.buff.WriteString(dvalue)
+				nvalue := fmt.Sprintf("		dv:=uint32(dd)\n")
+				c.buff.WriteString(nvalue)
+			case "int32":
+				dvalue := fmt.Sprintf("		dd, _:=strconv.Atoi(d)\n")
+				c.buff.WriteString(dvalue)
+				nvalue := fmt.Sprintf("		dv:=int32(dd)\n")
+				c.buff.WriteString(nvalue)
+			case "int64":
+				dvalue := fmt.Sprintf("		dv, _:=strconv.ParseInt(d,10,64)\n")
+				c.buff.WriteString(dvalue)
+			case "float64":
+				dvalue := fmt.Sprintf("		dv, _:=strconv.ParseFloat(d,64)\n")
+				c.buff.WriteString(dvalue)
+			case "float32":
+				dvalue := fmt.Sprintf("		dd, _:=strconv.ParseFloat(d,64)\n")
+				c.buff.WriteString(dvalue)
+				nvalue := fmt.Sprintf("		dv:=float32(dd)\n")
+				c.buff.WriteString(nvalue)
+			case "bool":
+				dvalue := fmt.Sprintf("		dv, _:=strconv.ParseBool(d)\n")
+				c.buff.WriteString(dvalue)
+			default:
+				have = false
+			}
+
+			if have {
+				ifstr := fmt.Sprintf("		if s,ok := this.%v[dv]; ok {\n", v.Name)
+				c.buff.WriteString(ifstr)
+				c.buff.WriteString("			s.InitDataSingle(dl[1:], v)\n")
+				c.buff.WriteString("		}else{\n")
+
+				stype := strings.TrimLeft(v.Vtype, "*common.")
+				prefix := strconv.Quote(v.Name + ".")
+				value := fmt.Sprintf("	s := common.New%v(this.uid, %v+d, this.update)\n", stype, prefix)
+				//	value := fmt.Sprintf("		this.%v.\n", v.Name)
+				c.buff.WriteString(value)
+
+				c.buff.WriteString("			s.InitDataSingle(dl[1:], v)\n")
+				c.buff.WriteString("		}\n")
+
+			}
+
+			c.buff.WriteString("		}\n")
+			c.buff.WriteString("	}\n")
+		}
+	}
+
 	c.buff.WriteString("}\n\n")
+}
+*/
+func (c *Class) CreateInitDataParamFunc() {
+	head := fmt.Sprintf("func (this *%v)InitDataParam(ks []string, d string) {\n", c.name)
+	c.buff.WriteString(head)
+	c.buff.WriteString("	if nil == this.update{\n")
+	c.buff.WriteString("		return\n")
+	c.buff.WriteString("	}\n")
+	c.buff.WriteString("		if len(ks) <= 0 {\n")
+	c.buff.WriteString("			return\n")
+	c.buff.WriteString("		}\n")
+	c.buff.WriteString("		tkey := ks[0]\n")
+	c.buff.WriteString("		switch tkey {\n")
+	for _, v := range c.params {
+		if nil != v {
+			if 1 == v.TType {
+				namestr := strconv.Quote(v.Name)
+				key := fmt.Sprintf("		case %v:\n", namestr)
+				c.buff.WriteString(key)
+				have := CheckValueType(v.Type, c)
+				if have {
+					value := fmt.Sprintf("			this.%v= dv\n", v.Name)
+					c.buff.WriteString(value)
+				}
+
+			}
+			if 2 == v.TType {
+				ifcheck := fmt.Sprintf("			if nil == this.%v {\n", v.Name)
+				c.buff.WriteString(ifcheck)
+				stype := strings.TrimLeft(v.Type, "*")
+				prefix := strconv.Quote(v.Name + ".")
+				value := fmt.Sprintf("				this.%v= common.New%v(this.uid, %v, this.update)\n", v.Name, stype, prefix)
+				c.buff.WriteString(value)
+				c.buff.WriteString("			}\n")
+				value2 := fmt.Sprintf("			this.%v.InitDataParam(ks[1:],d)\n", v.Name)
+				c.buff.WriteString(value2)
+			}
+			if 3 == v.TType {
+				ifcheck := fmt.Sprintf("			if nil == this.%v {\n", v.Name)
+				c.buff.WriteString(ifcheck)
+				tvalue := fmt.Sprintf("				this.%v=make(%v)\n", v.Name, v.MTye)
+				c.buff.WriteString(tvalue)
+				c.buff.WriteString("			}\n")
+				c.buff.WriteString("			if len(ks) == 2 {\n")
+				c.buff.WriteString("				d1 := ks[1]\n")
+				have := CheckValueType2(v.Ktype, c)
+				have2 := CheckValueType(v.Vtype, c)
+				if have && have2 {
+					value := fmt.Sprintf("				this.%v[dv1]= dv\n", v.Name)
+					c.buff.WriteString(value)
+				}
+				c.buff.WriteString("			}\n")
+			}
+			if 4 == v.TType {
+				ifcheck := fmt.Sprintf("			if nil == this.%v {\n", v.Name)
+				c.buff.WriteString(ifcheck)
+				tvalue := fmt.Sprintf("				this.%v=make(%v)\n", v.Name, v.MTye)
+				c.buff.WriteString(tvalue)
+				c.buff.WriteString("			}\n")
+				c.buff.WriteString("			if len(ks) > 2 {\n")
+				c.buff.WriteString("				d1 := ks[1]\n")
+				have := CheckValueType2(v.Ktype, c)
+				if have {
+					ifcheck := fmt.Sprintf("			ts,ok := this.%v[dv1]\n", v.Name)
+					c.buff.WriteString(ifcheck)
+					c.buff.WriteString("			if !ok || nil == ts {\n")
+					stype := strings.TrimLeft(v.Type, "*")
+					prefix := strconv.Quote(v.Name + ".")
+					dian := strconv.Quote(".")
+					value := fmt.Sprintf("				ts = common.New%v(this.uid, %v+dl+%v, this.update)\n", stype, prefix, dian)
+					c.buff.WriteString(value)
+					c.buff.WriteString("			}\n")
+					value2 := fmt.Sprintf("				this.%v[dv1]= ts\n", v.Name)
+					c.buff.WriteString(value2)
+					c.buff.WriteString("			ts.InitDataParam(ks[2:],d)\n")
+				}
+				c.buff.WriteString("			}\n")
+			}
+		}
+	}
+	c.buff.WriteString("		}\n")
+	c.buff.WriteString("}\n\n")
+
+}
+
+func (c *Class) CreateInitDataFuncNew() {
+	head := fmt.Sprintf("func (this *%v)InitData() {\n", c.name)
+	c.buff.WriteString(head)
+	c.buff.WriteString("	if nil == this.update{\n")
+	c.buff.WriteString("		return\n")
+	c.buff.WriteString("	}\n")
+	c.buff.WriteString("	data:= this.update.GetAllData()\n")
+	c.buff.WriteString("	for k,d := range data {\n")
+	dian := strconv.Quote(".")
+	ks := fmt.Sprintf("			ks := strings.Split(k, %v)\n", dian)
+	c.buff.WriteString(ks)
+	c.buff.WriteString("		if len(ks) <= 0 {\n")
+	c.buff.WriteString("			continue\n")
+	c.buff.WriteString("		}\n")
+	c.buff.WriteString("		tkey := ks[0]\n")
+	c.buff.WriteString("		switch tkey {\n")
+	for _, v := range c.params {
+		if nil != v {
+			if 1 == v.TType {
+				namestr := strconv.Quote(v.Name)
+				key := fmt.Sprintf("		case %v:\n", namestr)
+				c.buff.WriteString(key)
+				have := CheckValueType(v.Type, c)
+				if have {
+					value := fmt.Sprintf("			this.%v= dv\n", v.Name)
+					c.buff.WriteString(value)
+				}
+
+			}
+			if 2 == v.TType {
+				namestr := strconv.Quote(v.Name)
+				key := fmt.Sprintf("		case %v:\n", namestr)
+				c.buff.WriteString(key)
+				ifcheck := fmt.Sprintf("			if nil == this.%v {\n", v.Name)
+				c.buff.WriteString(ifcheck)
+				stype := strings.TrimLeft(v.Type, "*")
+				prefix := strconv.Quote(v.Name + ".")
+				value := fmt.Sprintf("				this.%v= common.New%v(this.uid, %v, this.update)\n", v.Name, stype, prefix)
+				c.buff.WriteString(value)
+				c.buff.WriteString("			}\n")
+				value2 := fmt.Sprintf("			this.%v.InitDataParam(ks[1:],d)\n", v.Name)
+				c.buff.WriteString(value2)
+			}
+			if 3 == v.TType {
+				namestr := strconv.Quote(v.Name)
+				key := fmt.Sprintf("		case %v:\n", namestr)
+				c.buff.WriteString(key)
+				ifcheck := fmt.Sprintf("			if nil == this.%v {\n", v.Name)
+				c.buff.WriteString(ifcheck)
+				tvalue := fmt.Sprintf("				this.%v=make(%v)\n", v.Name, v.MTye)
+				c.buff.WriteString(tvalue)
+				c.buff.WriteString("			}\n")
+				c.buff.WriteString("			if len(ks) == 2 {\n")
+				c.buff.WriteString("				d1 := ks[1]\n")
+				have := CheckValueType2(v.Ktype, c)
+				have2 := CheckValueType(v.Vtype, c)
+				if have && have2 {
+					value := fmt.Sprintf("				this.%v[dv1]= dv\n", v.Name)
+					c.buff.WriteString(value)
+				}
+				c.buff.WriteString("			}\n")
+			}
+			if 4 == v.TType {
+				namestr := strconv.Quote(v.Name)
+				key := fmt.Sprintf("		case %v:\n", namestr)
+				c.buff.WriteString(key)
+				ifcheck := fmt.Sprintf("			if nil == this.%v {\n", v.Name)
+				c.buff.WriteString(ifcheck)
+				tvalue := fmt.Sprintf("				this.%v=make(%v)\n", v.Name, v.MTye)
+				c.buff.WriteString(tvalue)
+				c.buff.WriteString("			}\n")
+				c.buff.WriteString("			if len(ks) > 2 {\n")
+				c.buff.WriteString("				d1 := ks[1]\n")
+				have := CheckValueType2(v.Ktype, c)
+				if have {
+					ifcheck := fmt.Sprintf("			ts,ok := this.%v[dv1]\n", v.Name)
+					c.buff.WriteString(ifcheck)
+					c.buff.WriteString("			if !ok || nil == ts {\n")
+					stype := strings.TrimLeft(v.Vtype, "*common.")
+					prefix := strconv.Quote(v.Name + ".")
+					dian := strconv.Quote(".")
+					value := fmt.Sprintf("				ts = common.New%v(this.uid, %v + d1 + %v, this.update)\n", stype, prefix, dian)
+					c.buff.WriteString(value)
+					c.buff.WriteString("			}\n")
+					value2 := fmt.Sprintf("				this.%v[dv1]= ts\n", v.Name)
+					c.buff.WriteString(value2)
+					c.buff.WriteString("			ts.InitDataParam(ks[2:],d)\n")
+				}
+				c.buff.WriteString("			}\n")
+			}
+		}
+	}
+	c.buff.WriteString("		}\n")
+	c.buff.WriteString("	}\n")
+	c.buff.WriteString("}\n\n")
+
 }
 
 func (c *Class) CreateSetFunc(name, ctype string, ttype uint32) {
@@ -611,6 +872,48 @@ func (c *Class) CreateClose() {
 	c.buff.WriteString("}\n\n")
 }
 
+func (c *Class) CreateDestroy() {
+	head2 := fmt.Sprintf("func(this *%v) Destroy(){\n", c.name)
+	c.buff.WriteString(head2)
+	if c.Lock {
+		c.buff.WriteString("	this.mutex.Lock()\n")
+		c.buff.WriteString("	defer this.mutex.Unlock()\n")
+	}
+	for _, v := range c.params {
+		if nil != v && 1 == v.TType {
+			namestr := strconv.Quote(v.Name)
+			add2 := fmt.Sprintf("	this.update.DelData(this.prefix + %v)\n", namestr)
+			c.buff.WriteString(add2)
+		}
+
+		if 2 == v.TType {
+			key := fmt.Sprintf(" if nil != this.%v {\n", v.Name)
+			c.buff.WriteString(key)
+			value2 := fmt.Sprintf("		this.%v.Destroy()\n", v.Name)
+			c.buff.WriteString(value2)
+			c.buff.WriteString("	}\n")
+		}
+		if 3 == v.TType {
+			roll := fmt.Sprintf("	for k,_:=range this.%v{\n", v.Name)
+			c.buff.WriteString(roll)
+			c.buff.WriteString("		key := this.prefix + fmt.Sprint(k)\n")
+			c.buff.WriteString("		this.update.DelData(key)\n")
+			c.buff.WriteString("	}\n")
+
+		}
+		if 4 == v.TType {
+			roll := fmt.Sprintf("	for _,v:=range this.%v{\n", v.Name)
+			c.buff.WriteString(roll)
+			c.buff.WriteString("		if nil != v {\n")
+			c.buff.WriteString("			v.Destroy()\n")
+			c.buff.WriteString("		}\n")
+			c.buff.WriteString("	}\n")
+		}
+
+	}
+	c.buff.WriteString("}\n\n")
+}
+
 func (c *Class) CreateMapFunc(name, ktype, vtype string) {
 	//add func
 	head := fmt.Sprintf("func(this *%v) Add%vData(key %v,value %v){\n", c.name, name, ktype, vtype)
@@ -644,6 +947,74 @@ func (c *Class) CreateMapFunc(name, ktype, vtype string) {
 	c.buff.WriteString(body1)
 	body2 := fmt.Sprintf("		delete(this.%v, key)\n", name)
 	c.buff.WriteString(body2)
+	c.buff.WriteString("	}\n")
+	c.buff.WriteString("}\n\n")
+
+	//get by key
+	head3 := fmt.Sprintf("func(this *%v) GeT%vDataByKey(key %v) (value %v) {\n", c.name, name, ktype, vtype)
+	c.buff.WriteString(head3)
+	if c.Lock {
+		c.buff.WriteString("	this.mutex.Lock()\n")
+		c.buff.WriteString("	defer this.mutex.Unlock()\n")
+	}
+
+	body3 := fmt.Sprintf("	if v,ok:=this.%v[key]; ok{\n", name)
+	c.buff.WriteString(body3)
+	c.buff.WriteString("		value = v\n")
+	c.buff.WriteString("	}\n")
+	c.buff.WriteString("	return\n")
+	c.buff.WriteString("}\n\n")
+	//get all
+	head4 := fmt.Sprintf("func(this *%v) Get%vDataAll() (d map[%v]%v){\n", c.name, name, ktype, vtype)
+	c.buff.WriteString(head4)
+	if c.Lock {
+		c.buff.WriteString("	this.mutex.Lock()\n")
+		c.buff.WriteString("	defer this.mutex.Unlock()\n")
+	}
+	body4 := fmt.Sprintf("	d = make(map[%v]%v)\n", ktype, vtype)
+	c.buff.WriteString(body4)
+	body5 := fmt.Sprintf("	for k, v := range this.%v{\n", name)
+	c.buff.WriteString(body5)
+	c.buff.WriteString("		d[k] = v\n")
+	c.buff.WriteString("	}\n")
+	c.buff.WriteString("	return\n")
+	c.buff.WriteString("}\n\n")
+}
+
+func (c *Class) CreateMapStructFunc(name, ktype, vtype string) {
+	//add func
+	head := fmt.Sprintf("func(this *%v) Create%vNewData(key %v)(value %v){\n", c.name, name, ktype, vtype)
+	c.buff.WriteString(head)
+	if c.Lock {
+		c.buff.WriteString("	this.mutex.Lock()\n")
+		c.buff.WriteString("	defer this.mutex.Unlock()\n")
+	}
+
+	stype := strings.TrimLeft(vtype, "*common.")
+	prefix := strconv.Quote("this.prefix" + name + ".")
+	value := fmt.Sprintf("	newdata := common.New%v(this.uid, %v, this.update)\n", stype, prefix)
+	c.buff.WriteString(value)
+	body := fmt.Sprintf("	this.%v[key] = newdata\n", name)
+	c.buff.WriteString(body)
+	c.buff.WriteString("	value = newdata\n")
+	c.buff.WriteString("	return\n")
+	c.buff.WriteString("}\n\n")
+	//def func
+	head2 := fmt.Sprintf("func(this *%v) Del%vData(key %v){\n", c.name, name, ktype)
+	c.buff.WriteString(head2)
+	if c.Lock {
+		c.buff.WriteString("	this.mutex.Lock()\n")
+		c.buff.WriteString("	defer this.mutex.Unlock()\n")
+	}
+
+	//	c.buff.WriteString(" 	keystr := fmt.Sprint(key)\n")
+	//	add2 := fmt.Sprintf("	this.update.DelData(this.prefix + %v + keystr)\n", prefix)
+	//	c.buff.WriteString(add2)
+	body1 := fmt.Sprintf("	if v,ok:=this.%v[key]; ok{\n", name)
+	c.buff.WriteString(body1)
+	body2 := fmt.Sprintf("		delete(this.%v, key)\n", name)
+	c.buff.WriteString(body2)
+	c.buff.WriteString("		v.Destroy()\n")
 	c.buff.WriteString("	}\n")
 	c.buff.WriteString("}\n\n")
 

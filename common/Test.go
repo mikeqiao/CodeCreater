@@ -3,16 +3,15 @@ package common
 import (
 	"github.com/mikeqiao/newworld/data"
 	"strconv"
-	"strings"
 	"fmt"
 )
 
 type Test struct {
-	myData	map[uint64]uint32
 	name	string
 	uid	uint64
 	cdd	int32
 	dasda	int32
+	myData	map[uint64]uint32
 	prefix string
 	update *data.UpdateMod
 }
@@ -29,35 +28,6 @@ func NewTest(uid uint64, prefix string, update *data.UpdateMod) *Test{
 		d.update.Init(table)
 	}
 	return d
-}
-
-func(this *Test) AddmyDataData(key uint64,value uint32){
- 	keystr := fmt.Sprint(key)
-	this.update.AddData(this.prefix + "myData." + keystr, value)
-	this.myData[key] = value
-}
-
-func(this *Test) DelmyDataData(key uint64){
- 	keystr := fmt.Sprint(key)
-	this.update.DelData(this.prefix + "myData." + keystr)
-	if _,ok:=this.myData[key]; ok{
-		delete(this.myData, key)
-	}
-}
-
-func(this *Test) GeTmyDataDataByKey(key uint64) (value uint32) {
-	if v,ok:=this.myData[key]; ok{
-		value = v
-	}
-	return
-}
-
-func(this *Test) GetmyDataDataAll() (d map[uint64]uint32){
-	d = make(map[uint64]uint32)
-	for k, v := range this.myData{
-		d[k] = v
-	}
-	return
 }
 
 func(this *Test) Setname(value string){
@@ -96,41 +66,79 @@ func(this *Test) Getdasda() int32{
 	return this.dasda
 }
 
-func (this *Test)InitData(data map[string]string) {
-	if nil == data{
+func(this *Test) AddmyDataData(key uint64,value uint32){
+ 	keystr := fmt.Sprint(key)
+	this.update.AddData(this.prefix + "myData." + keystr, value)
+	this.myData[key] = value
+}
+
+func(this *Test) DelmyDataData(key uint64){
+ 	keystr := fmt.Sprint(key)
+	this.update.DelData(this.prefix + "myData." + keystr)
+	if _,ok:=this.myData[key]; ok{
+		delete(this.myData, key)
+	}
+}
+
+func(this *Test) GeTmyDataDataByKey(key uint64) (value uint32) {
+	if v,ok:=this.myData[key]; ok{
+		value = v
+	}
+	return
+}
+
+func(this *Test) GetmyDataDataAll() (d map[uint64]uint32){
+	d = make(map[uint64]uint32)
+	for k, v := range this.myData{
+		d[k] = v
+	}
+	return
+}
+
+func (this *Test)InitDataParam(ks []string, d string) {
+	if nil == this.update{
 		return
 	}
-	if d,ok:=data[this.prefix+"name"];ok{
-		dv:=d
-		this.name= dv
-	}
-
-	if d,ok:=data[this.prefix+"uid"];ok{
-		dv, _:=strconv.ParseUint(d,10,64)
-		this.uid= dv
-	}
-
-	if d,ok:=data[this.prefix+"cdd"];ok{
-		dd, _:=strconv.Atoi(d)
-		dv:=int32(dd)
-		this.cdd= dv
-	}
-
-	if d,ok:=data[this.prefix+"dasda"];ok{
-		dd, _:=strconv.Atoi(d)
-		dv:=int32(dd)
-		this.dasda= dv
-	}
-
-	this.myData=make(map[uint64]uint32)
-	for k,v:=range data{
-		if strings.HasPrefix(k, this.prefix + "myData."){
-			d := strings.TrimLeft(k, this.prefix + "myData.")
-			dv, _:=strconv.ParseUint(d,10,64)
-			dd2, _:=strconv.ParseUint(v,10,64)
-			dv2:=uint32(dd2)
-			this.myData[dv]= dv2
+		if len(ks) <= 0 {
+			return
 		}
+		tkey := ks[0]
+		switch tkey {
+		case "name":
+		dv:=d
+			this.name= dv
+		case "uid":
+		dv, _:=strconv.ParseUint(d,10,64)
+			this.uid= dv
+		case "cdd":
+		dd, _:=strconv.Atoi(d)
+		dv:=int32(dd)
+			this.cdd= dv
+		case "dasda":
+		dd, _:=strconv.Atoi(d)
+		dv:=int32(dd)
+			this.dasda= dv
+			if nil == this.myData {
+				this.myData=make(map[uint64]uint32)
+			}
+			if len(ks) == 2 {
+				d1 := ks[1]
+		dv1, _:=strconv.ParseUint(d1,10,64)
+		dd, _:=strconv.ParseUint(d,10,64)
+		dv:=uint32(dd)
+				this.myData[dv1]= dv
+			}
+		}
+}
+
+func(this *Test) Destroy(){
+	this.update.DelData(this.prefix + "name")
+	this.update.DelData(this.prefix + "uid")
+	this.update.DelData(this.prefix + "cdd")
+	this.update.DelData(this.prefix + "dasda")
+	for k,_:=range this.myData{
+		key := this.prefix + fmt.Sprint(k)
+		this.update.DelData(key)
 	}
 }
 
