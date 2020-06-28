@@ -1,0 +1,15 @@
+{
+	"TestMod":
+	{
+		"Service1":
+		{
+			"Req":"req",
+			"Res":"res"
+		},
+		"Service2":
+		{
+			"Req":"req",
+			"Res":"res"
+		}
+	}
+}

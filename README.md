@@ -22,35 +22,6 @@
 		 
 		限制 struct  内部不能使用interface{} 类型  不推荐使用嵌套的map类型
 	}
-	背包
-	{
-		
-		
-	}
-	装备
-	{
-		
-	}
-	
-	buff
-	{
-		map
-		{
-			
-		}
-	}
-	技能
-	次数进度
-	
-	
-	
-	排行榜
-	
-	聊天
-	好友
-	队伍
-	公会
-	
 	
 	//规则
 	1 struct   首字母大写
@@ -60,3 +31,33 @@
 	4 不是data开头的struct  别的 struct 的子节点
 	
 	5 map  涉及 add get del 操作
+	
+	自动生成服务
+	{
+		不能修改原来存在的文件
+		只能新增
+		1判断mod 是否存在 不存在 创建
+		2添加func
+		3注册到mod
+		
+		service
+		{
+			ModName
+			Name
+			Req
+			Res
+		}
+		
+		common/module/ mod 名字 路径
+		modXXX.go 文件
+		{
+			创建mod 注册到 框架
+		}
+		handleXXX.go 文件
+		{
+			注册到 mod
+			定义方法	
+		}
+		
+		
+	}

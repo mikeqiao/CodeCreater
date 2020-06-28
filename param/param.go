@@ -8,3 +8,9 @@ type Param struct {
 	Ktype string //map 的key值 类型
 	Vtype string //map 的元素值类型
 }
+
+type Server struct {
+	Name string
+	Req  string
+	Res  string
+}

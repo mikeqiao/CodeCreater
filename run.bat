@@ -1,1 +1,1 @@
-codecreater.exe -path github.com/mikeqiao/codecreater
+codecreater.exe -path github.com/mikeqiao/codecreater/data -type data
