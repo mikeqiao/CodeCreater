@@ -1,9 +1,12 @@
 package read
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
+	"strconv"
 
 	"github.com/mikeqiao/codecreater/class"
 	"github.com/mikeqiao/codecreater/file"
@@ -38,7 +41,7 @@ func CreateData(path string) {
 		f := new(file.File)
 
 		if c.IsData {
-			path := k
+			path := class.DataPath + k
 			name := path + "/" + k + ".go"
 			name2 := path + "/" + "manager.go"
 			f.CreateDir(path)
@@ -51,10 +54,10 @@ func CreateData(path string) {
 			f2.Write(c.GetManagerBuff())
 			f2.Close()
 		} else {
-			path := "common"
-			name := path + "/" + k + ".go"
+			tpath := class.DataPath + "common"
+			name := tpath + "/" + k + ".go"
 
-			f.CreateDir(path)
+			f.CreateDir(tpath)
 
 			f.CreateFile(name)
 			f.Write(c.GetBuff())
@@ -79,15 +82,23 @@ func InitService() {
 }
 
 func CreateService(path string) {
-	for k, v := range Smap {
+	mf := new(file.File)
+	name := class.ProtoPath + "msg.go"
 
+	mf.CreateDir(class.ProtoPath)
+	mf.CreateFile(name)
+	Msgbuff := new(bytes.Buffer)
+	CreateMsgHead(Msgbuff, path)
+	Msgbuff.WriteString("func init(){\n")
+	for k, v := range Smap {
+		Msg(v, Msgbuff)
 		c := class.NewMod(k)
 		c.Path = path
 		c.InitData(v)
 		c.Init()
 		f := new(file.File)
 
-		path := k
+		path := class.ModPath + k
 		name := path + "/" + k + ".go"
 		f.CreateDir(path)
 
@@ -105,4 +116,56 @@ func CreateService(path string) {
 			}
 		}
 	}
+	Msgbuff.WriteString("}\n\n")
+	mf.Write(Msgbuff)
+	mf.Close()
+}
+
+func Msg(d map[string]map[string]string, buff *bytes.Buffer) {
+	for k1, v1 := range d {
+		if req, ok := v1["Req"]; ok {
+			name := strFirstToUpper(req)
+			b := fmt.Sprintf("	m.DefaultProcessor.RegisterMsg(%v, reflect.TypeOf(proto.%v{}))\n", strconv.Quote(name), name)
+			buff.WriteString(b)
+		} else {
+			fmt.Printf("this service have no req info, service:%v\n", k1)
+			return
+		}
+		if res, ok := v1["Res"]; ok {
+			name := strFirstToUpper(res)
+			b := fmt.Sprintf("	m.DefaultProcessor.RegisterMsg(%v,  reflect.TypeOf(proto.%v{}))\n", strconv.Quote(name), name)
+			buff.WriteString(b)
+		} else {
+			fmt.Printf("this service have no res info, service:%v\n", k1)
+			return
+		}
+	}
+}
+
+func CreateMsgHead(buff *bytes.Buffer, path string) {
+	str := "package msg"
+	buff.WriteString(str)
+	buff.WriteString("\n\n")
+	buff.WriteString("import (\n")
+	pak := strconv.Quote("github.com/mikeqiao/newworld/manager")
+	buff.WriteString("	m" + pak + "\n")
+	pak2 := strconv.Quote("reflect")
+	buff.WriteString("	" + pak2 + "\n")
+
+	tpath := path + "/proto"
+	pak5 := strconv.Quote(tpath)
+	buff.WriteString("	" + pak5 + "\n")
+
+	buff.WriteString(")\n\n")
+}
+
+func strFirstToUpper(str string) string {
+	if len(str) < 1 {
+		return ""
+	}
+	strArry := []rune(str)
+	if strArry[0] >= 97 && strArry[0] <= 122 {
+		strArry[0] -= 32
+	}
+	return string(strArry)
 }

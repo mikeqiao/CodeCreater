@@ -16,11 +16,6 @@
 		"MyTest":"*Test",
 		"MyData":"map[uint32]*Test",
 		"MySData":"map[uint64]uint32"
-	},
-	"Service":
-	{
-		"Name":"TestFunc",
-		"Req":"req",
-		"Res":"res"
 	}
+	
 }

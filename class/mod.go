@@ -71,6 +71,8 @@ func (m *Mod) CreateModHead() {
 	m.Modbuff.WriteString("	m" + pak + "\n")
 	pak2 := strconv.Quote("github.com/mikeqiao/newworld/module")
 	m.Modbuff.WriteString("	mod" + pak2 + "\n")
+	pak3 := strconv.Quote(m.Path + "/proto")
+	m.Modbuff.WriteString("	" + pak3 + "\n")
 	m.Modbuff.WriteString(")\n\n")
 	m.Modbuff.WriteString("var Mod *mod.Mod\n\n")
 }
@@ -78,16 +80,17 @@ func (m *Mod) CreateModHead() {
 func (m *Mod) CreateModFunc() {
 	m.Modbuff.WriteString("func Init(){\n")
 
-	body := fmt.Sprintf("	Mod := m.NewMod(%v)\n", m.modName)
+	body := fmt.Sprintf("	Mod := m.NewMod(%v)\n", strconv.Quote(m.modName))
 	m.Modbuff.WriteString(body)
 	m.Modbuff.WriteString("	Register()\n")
-	m.Modbuff.WriteString("	m.Registe(Mod)\n")
+	m.Modbuff.WriteString("	m.ModManager.Registe(Mod)\n")
 	m.Modbuff.WriteString("}\n\n")
 
 	m.Modbuff.WriteString("func Register(){\n")
 	for _, v := range m.Params {
 		if nil != v {
-			s := fmt.Sprintf("	Mod.Registe(%v, %v, %v, %v)\n", v.Name, v.Name, v.Req, v.Res)
+			name := strconv.Quote(v.Name)
+			s := fmt.Sprintf("	Mod.Register(%v, %v, proto.%v{}, proto.%v{})\n", name, v.Name, strFirstToUpper(v.Req), strFirstToUpper(v.Res))
 			m.Modbuff.WriteString(s)
 		}
 	}
@@ -106,7 +109,7 @@ func (m *Mod) CreateServiceHead() {
 	m.Servicebuff.WriteString("\n\n")
 	m.Servicebuff.WriteString("import (\n")
 	pak2 := strconv.Quote("github.com/mikeqiao/newworld/module")
-	m.Modbuff.WriteString("	mod" + pak2 + "\n")
+	m.Servicebuff.WriteString("	mod" + pak2 + "\n")
 	path := m.Path + "/msg"
 	pak5 := strconv.Quote(path)
 	m.Servicebuff.WriteString("	" + pak5 + "\n")
@@ -117,9 +120,9 @@ func (m *Mod) CreateServiceHead() {
 func (m *Mod) CreateServiceFunc(v *p.Server) {
 
 	if nil != v {
-		h := fmt.Sprint("func %v(call *mod.CallInfo) {", v.Name)
+		h := fmt.Sprintf("func %v(call *mod.CallInfo) {", v.Name)
 		m.Servicebuff.WriteString(h)
 	}
 
-	m.Servicebuff.WriteString(")\n\n")
+	m.Servicebuff.WriteString("}\n\n")
 }

@@ -5,6 +5,12 @@ import (
 	"strings"
 )
 
+const (
+	DataPath  = "data/"
+	ModPath   = "module/"
+	ProtoPath = "msg/"
+)
+
 func strFirstToUpper(str string) string {
 	if len(str) < 1 {
 		return ""

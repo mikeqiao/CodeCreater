@@ -25,7 +25,7 @@ func main() {
 		read.InitData()
 		read.CreateData(Path)
 	}
-	if "Service" == Type {
+	if "service" == Type {
 		read.InitService()
 		read.CreateService(Path)
 	}

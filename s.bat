@@ -1,0 +1,1 @@
+codecreater.exe -path github.com/mikeqiao/codecreater -type service

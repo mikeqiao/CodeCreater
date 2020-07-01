@@ -1,0 +1,13 @@
+syntax = "proto3";
+option go_package = ".;proto";
+
+package proto;
+
+
+message Req{
+	uint64 uid = 1;
+}
+
+message Res{
+	uint64 uid = 1;
+}
