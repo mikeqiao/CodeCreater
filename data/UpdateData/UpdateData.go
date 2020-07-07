@@ -32,6 +32,19 @@ func (this *UpdateData) GetuserDatab() *DataTest2.DataTest2 {
 	return this.userDatab
 }
 
+func (this *UpdateData) UpdateData() {
+	if nil != this.userData {
+		this.userData.UpdateData()
+	}
+	if nil != this.userDatab {
+		this.userDatab.UpdateData()
+	}
+}
+
+func (this *UpdateData) Close() {
+	this.UpdateData()
+}
+
 func (this *UpdateData) Destroy() {
 	if nil != this.userData {
 		this.userData.Destroy()
