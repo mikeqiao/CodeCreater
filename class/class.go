@@ -69,7 +69,8 @@ func (c *Class) InitData(d map[string]string) {
 			is, mtype := CheckStruct(v)
 			if is {
 				ctype := strings.TrimLeft(mtype, "*common.")
-				ctype = "*" + ctype + "." + ctype
+				mod := strFirstToLower(ctype)
+				ctype = "*" + mod + "." + ctype
 				np.TType = 2
 				np.MTye = mtype
 				np.UType = ctype
@@ -161,8 +162,10 @@ func (c *Class) InitUpdateImport() {
 	for _, v := range c.params {
 		if 2 == v.TType {
 			ctype := strings.TrimLeft(v.MTye, "*common.")
+			mod := strFirstToLower(ctype)
 			path := c.Path + "/" + ctype
-			pak5 := strconv.Quote(path)
+			pak5 := mod + " " + strconv.Quote(path)
+
 			c.buff.WriteString("	" + pak5 + "\n")
 		}
 
@@ -216,7 +219,8 @@ func (c *Class) InitUpdateParam() {
 			ctype := v.Type
 			if 2 == v.TType {
 				ctype = strings.TrimLeft(v.MTye, "*common.")
-				ctype = "*" + ctype + "." + ctype
+				mod := strFirstToLower(ctype)
+				ctype = "*" + mod + "." + ctype
 			}
 
 			c.buff.WriteString("	")

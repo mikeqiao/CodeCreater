@@ -1,12 +1,12 @@
 package updateData
 
 import (
-	"github.com/mikeqiao/codecreater/data/DataTest2"
+	dataTest2 "github.com/mikeqiao/codecreater/data/DataTest2"
 )
 
 type UpdateData struct {
-	userData  *DataTest2.DataTest2
-	userDatab *DataTest2.DataTest2
+	userData  *dataTest2.DataTest2
+	userDatab *dataTest2.DataTest2
 	uid       uint64
 }
 
@@ -16,19 +16,19 @@ func NewUpdateData(uid uint64) *UpdateData {
 	return d
 }
 
-func (this *UpdateData) SetuserData(value *DataTest2.DataTest2) {
+func (this *UpdateData) SetuserData(value *dataTest2.DataTest2) {
 	this.userData = value
 }
 
-func (this *UpdateData) GetuserData() *DataTest2.DataTest2 {
+func (this *UpdateData) GetuserData() *dataTest2.DataTest2 {
 	return this.userData
 }
 
-func (this *UpdateData) SetuserDatab(value *DataTest2.DataTest2) {
+func (this *UpdateData) SetuserDatab(value *dataTest2.DataTest2) {
 	this.userDatab = value
 }
 
-func (this *UpdateData) GetuserDatab() *DataTest2.DataTest2 {
+func (this *UpdateData) GetuserDatab() *dataTest2.DataTest2 {
 	return this.userDatab
 }
 
