@@ -9,13 +9,13 @@ import (
 var Mod *mod.Mod
 
 func Init(){
-	Mod := m.NewMod("TestMod")
+	Mod := m.NewMod(0,"TestMod")
 	Register()
 	m.ModManager.Registe(Mod)
 }
 
 func Register(){
-	Mod.Register("Service1", Service1, proto.Req{}, proto.Res{})
 	Mod.Register("Service2", Service2, proto.Req{}, proto.Res{})
+	Mod.Register("Service1", Service1, proto.Req{}, proto.Res{})
 }
 

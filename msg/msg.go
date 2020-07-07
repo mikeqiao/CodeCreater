@@ -9,7 +9,5 @@ import (
 func init(){
 	m.DefaultProcessor.RegisterMsg("Req", reflect.TypeOf(proto.Req{}))
 	m.DefaultProcessor.RegisterMsg("Res",  reflect.TypeOf(proto.Res{}))
-	m.DefaultProcessor.RegisterMsg("Req", reflect.TypeOf(proto.Req{}))
-	m.DefaultProcessor.RegisterMsg("Res",  reflect.TypeOf(proto.Res{}))
 }
 

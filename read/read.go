@@ -17,7 +17,7 @@ var Smap map[string]map[string]map[string]string
 var MsgMap map[string]string
 
 func InitData() {
-	MsgMap = make(map[string]string)
+
 	//	Dmap = make(map[string]string)
 	data, err := ioutil.ReadFile("./data.json")
 	if err != nil {
@@ -70,6 +70,7 @@ func CreateData(path string) {
 }
 
 func InitService() {
+	MsgMap = make(map[string]string)
 	//	Dmap = make(map[string]string)
 	data, err := ioutil.ReadFile("./service.json")
 	if err != nil {
