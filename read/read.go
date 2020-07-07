@@ -112,9 +112,12 @@ func CreateService(path string) {
 			if nil != s {
 				c.CreateServiceFile(s)
 				name2 := path + "/" + s.Name + ".go"
+
 				f2 := new(file.File)
-				f2.CreateFile(name2)
-				f2.Write(c.GetServiceBuff())
+				if !f2.IsDirOrFileExist(name2) {
+					f2.CreateFile(name2)
+					f2.Write(c.GetServiceBuff())
+				}
 				f2.Close()
 			}
 		}
