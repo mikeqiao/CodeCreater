@@ -1,21 +1,21 @@
-package DataTest2
+package dataTest2
 
 import (
 	"github.com/mikeqiao/newworld/data"
 	"strconv"
-	"codecreater/data/common"
+	"github.com/mikeqiao/codecreater/data/common"
 	"strings"
 	"fmt"
 )
 
 type DataTest2 struct {
-	name3	string
-	myTest	*common.Test
 	myData	map[uint32]*common.Test
 	mySData	map[uint64]uint32
 	uid	uint64
 	lang	string
 	name2	string
+	name3	string
+	myTest	*common.Test
 	prefix string
 	update *data.UpdateMod
 }
@@ -34,23 +34,6 @@ func NewDataTest2(uid uint64, prefix string, update *data.UpdateMod) *DataTest2{
 	return d
 }
 
-func(this *DataTest2) Setname3(value string){
-	this.update.AddData(this.prefix+"name3", value)
-	this.name3 = value
-}
-
-func(this *DataTest2) Getname3() string{
-	return this.name3
-}
-
-func(this *DataTest2) SetmyTest(value *common.Test){
-	this.myTest = value
-}
-
-func(this *DataTest2) GetmyTest() *common.Test{
-	return this.myTest
-}
-
 func(this *DataTest2) CreatemyDataNewData(key uint32)(value *common.Test){
 	newdata := common.NewTest(this.uid, "this.prefixmyData.", this.update)
 	this.myData[key] = newdata
@@ -65,7 +48,7 @@ func(this *DataTest2) DelmyDataData(key uint32){
 	}
 }
 
-func(this *DataTest2) GeTmyDataDataByKey(key uint32) (value *common.Test) {
+func(this *DataTest2) GetmyDataDataByKey(key uint32) (value *common.Test) {
 	if v,ok:=this.myData[key]; ok{
 		value = v
 	}
@@ -94,7 +77,7 @@ func(this *DataTest2) DelmySDataData(key uint64){
 	}
 }
 
-func(this *DataTest2) GeTmySDataDataByKey(key uint64) (value uint32) {
+func(this *DataTest2) GetmySDataDataByKey(key uint64) (value uint32) {
 	if v,ok:=this.mySData[key]; ok{
 		value = v
 	}
@@ -136,6 +119,23 @@ func(this *DataTest2) Getname2() string{
 	return this.name2
 }
 
+func(this *DataTest2) Setname3(value string){
+	this.update.AddData(this.prefix+"name3", value)
+	this.name3 = value
+}
+
+func(this *DataTest2) Getname3() string{
+	return this.name3
+}
+
+func(this *DataTest2) SetmyTest(value *common.Test){
+	this.myTest = value
+}
+
+func(this *DataTest2) GetmyTest() *common.Test{
+	return this.myTest
+}
+
 func (this *DataTest2)InitData() {
 	if nil == this.update{
 		return
@@ -148,14 +148,6 @@ func (this *DataTest2)InitData() {
 		}
 		tkey := ks[0]
 		switch tkey {
-		case "name3":
-		dv:=d
-			this.name3= dv
-		case "myTest":
-			if nil == this.myTest {
-				this.myTest= common.NewTest(this.uid, "myTest.", this.update)
-			}
-			this.myTest.InitDataParam(ks[1:],d)
 		case "myData":
 			if nil == this.myData {
 				this.myData=make(map[uint32]*common.Test)
@@ -191,6 +183,14 @@ func (this *DataTest2)InitData() {
 		case "name2":
 		dv:=d
 			this.name2= dv
+		case "name3":
+		dv:=d
+			this.name3= dv
+		case "myTest":
+			if nil == this.myTest {
+				this.myTest= common.NewTest(this.uid, "myTest.", this.update)
+			}
+			this.myTest.InitDataParam(ks[1:],d)
 		}
 	}
 }
@@ -206,10 +206,6 @@ func (this *DataTest2)Close() {
 }
 
 func(this *DataTest2) Destroy(){
-	this.update.DelData(this.prefix + "name3")
- if nil != this.myTest {
-		this.myTest.Destroy()
-	}
 	for _,v:=range this.myData{
 		if nil != v {
 			v.Destroy()
@@ -222,5 +218,9 @@ func(this *DataTest2) Destroy(){
 	this.update.DelData(this.prefix + "uid")
 	this.update.DelData(this.prefix + "lang")
 	this.update.DelData(this.prefix + "name2")
+	this.update.DelData(this.prefix + "name3")
+ if nil != this.myTest {
+		this.myTest.Destroy()
+	}
 }
 

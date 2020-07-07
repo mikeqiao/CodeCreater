@@ -1,25 +1,25 @@
-package DataTest2
+package updateData
 
 import (
 	"sync"
 	"time"
 )
 
-var Manager *DataTest2Manager
+var Manager *UpdateDataManager
 
-type DataTest2Manager struct {
+type UpdateDataManager struct {
 	closed	bool
 	mutex sync.RWMutex
-	data map[uint64]*DataTest2
+	data map[uint64]*UpdateData
 }
 
 func init(){
-	Manager := new(DataTest2Manager)
-	Manager.data= make(map[uint64]*DataTest2)
+	Manager := new(UpdateDataManager)
+	Manager.data= make(map[uint64]*UpdateData)
 	go Manager.Update()
 }
 
-func (this *DataTest2Manager)AddData(d *DataTest2){
+func (this *UpdateDataManager)AddData(d *UpdateData){
 	if  nil == d{
 		return
 	}
@@ -28,7 +28,7 @@ func (this *DataTest2Manager)AddData(d *DataTest2){
 	this.data[d.uid]= d
 }
 
-func (this *DataTest2Manager)DelData(uid uint64)bool{
+func (this *UpdateDataManager)DelData(uid uint64)bool{
 	this.mutex.Lock()
 	defer this.mutex.Unlock()
 	if  v,ok := this.data[uid];ok{
@@ -41,7 +41,7 @@ func (this *DataTest2Manager)DelData(uid uint64)bool{
 	return false
 }
 
-func (this *DataTest2Manager)GetData(uid uint64)*DataTest2{
+func (this *UpdateDataManager)GetData(uid uint64)*UpdateData{
 	this.mutex.RLock()
 	defer this.mutex.RUnlock()
 	if  v,ok := this.data[uid];ok{
@@ -50,7 +50,7 @@ func (this *DataTest2Manager)GetData(uid uint64)*DataTest2{
 	return nil
 }
 
-func AddData(data *DataTest2){
+func AddData(data *UpdateData){
 	if nil== Manager || nil == data{
 		return
 	}
@@ -64,14 +64,14 @@ func DelData(uid uint64)bool{
 	return Manager.DelData(uid)
 }
 
-func GetData(uid uint64) *DataTest2 {
+func GetData(uid uint64) *UpdateData {
 	if nil== Manager {
 		return nil
 	}
 	return Manager.GetData(uid)
 }
 
-func (this *DataTest2Manager)Close(){
+func (this *UpdateDataManager)Close(){
 	this.mutex.Lock()
 	defer this.mutex.Unlock()
 	this.closed= true
@@ -83,7 +83,7 @@ func (this *DataTest2Manager)Close(){
 	}
 }
 
-func (this *DataTest2Manager)Update(){
+func (this *UpdateDataManager)Update(){
 	t := time.Tick(500 * time.Millisecond)
 	for _ = range t {
 		this.mutex.RLock()

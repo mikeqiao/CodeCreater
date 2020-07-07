@@ -117,7 +117,8 @@ func (c *Class) Init() {
 }
 
 func (c *Class) InitPackage() {
-	str := "package " + c.name
+
+	str := "package " + strFirstToLower(c.name)
 	if !c.IsData && !c.IsUpdate {
 		str = "package common"
 	}
@@ -1139,7 +1140,7 @@ func (c *Class) CreateMapStructFunc(name, ktype, vtype string) {
 
 //manager
 func (c *Class) ManagerInit() {
-	if c.IsData {
+	if c.IsUpdate {
 		c.ManagerInitPackage()
 		c.ManagerInitImport()
 		c.ManagerInitParam()
@@ -1154,7 +1155,7 @@ func (c *Class) ManagerInit() {
 }
 
 func (c *Class) ManagerInitPackage() {
-	str := "package " + c.name
+	str := "package " + strFirstToLower(c.name)
 	c.managerbuff.WriteString(str)
 	c.managerbuff.WriteString("\n\n")
 }

@@ -7,11 +7,11 @@ import (
 )
 
 type Test struct {
+	uid	uint64
 	cdd	int32
 	dasda	int32
 	myData	map[uint64]uint32
 	name	string
-	uid	uint64
 	prefix string
 	update *data.UpdateMod
 }
@@ -28,6 +28,15 @@ func NewTest(uid uint64, prefix string, update *data.UpdateMod) *Test{
 		d.update.Init(table)
 	}
 	return d
+}
+
+func(this *Test) Setuid(value uint64){
+	this.update.AddData(this.prefix+"uid", value)
+	this.uid = value
+}
+
+func(this *Test) Getuid() uint64{
+	return this.uid
 }
 
 func(this *Test) Setcdd(value int32){
@@ -62,7 +71,7 @@ func(this *Test) DelmyDataData(key uint64){
 	}
 }
 
-func(this *Test) GeTmyDataDataByKey(key uint64) (value uint32) {
+func(this *Test) GetmyDataDataByKey(key uint64) (value uint32) {
 	if v,ok:=this.myData[key]; ok{
 		value = v
 	}
@@ -86,15 +95,6 @@ func(this *Test) Getname() string{
 	return this.name
 }
 
-func(this *Test) Setuid(value uint64){
-	this.update.AddData(this.prefix+"uid", value)
-	this.uid = value
-}
-
-func(this *Test) Getuid() uint64{
-	return this.uid
-}
-
 func (this *Test)InitDataParam(ks []string, d string) {
 	if nil == this.update{
 		return
@@ -104,6 +104,9 @@ func (this *Test)InitDataParam(ks []string, d string) {
 		}
 		tkey := ks[0]
 		switch tkey {
+		case "uid":
+		dv, _:=strconv.ParseUint(d,10,64)
+			this.uid= dv
 		case "cdd":
 		dd, _:=strconv.Atoi(d)
 		dv:=int32(dd)
@@ -125,13 +128,11 @@ func (this *Test)InitDataParam(ks []string, d string) {
 		case "name":
 		dv:=d
 			this.name= dv
-		case "uid":
-		dv, _:=strconv.ParseUint(d,10,64)
-			this.uid= dv
 		}
 }
 
 func(this *Test) Destroy(){
+	this.update.DelData(this.prefix + "uid")
 	this.update.DelData(this.prefix + "cdd")
 	this.update.DelData(this.prefix + "dasda")
 	for k,_:=range this.myData{
@@ -139,6 +140,5 @@ func(this *Test) Destroy(){
 		this.update.DelData(key)
 	}
 	this.update.DelData(this.prefix + "name")
-	this.update.DelData(this.prefix + "uid")
 }
 
