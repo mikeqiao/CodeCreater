@@ -100,6 +100,8 @@ func (c *Class) Init() {
 		c.CreateNewUpdateFunc()
 		c.InitUpdateParamFunc()
 
+		c.CreateUpUpdateFunc()
+		c.CreateClose()
 	} else {
 		c.InitImport()
 		c.InitParam()
@@ -951,6 +953,21 @@ func (c *Class) CreateUpdateFunc() {
 	c.buff.WriteString("	if nil != this.update{\n")
 	c.buff.WriteString("		this.update.Update()\n")
 	c.buff.WriteString("	}\n")
+	c.buff.WriteString("}\n\n")
+}
+
+func (c *Class) CreateUpUpdateFunc() {
+	head := fmt.Sprintf("func (this *%v)UpdateData() {\n", c.name)
+	c.buff.WriteString(head)
+	for _, v := range c.params {
+		if 2 == v.TType {
+			key := fmt.Sprintf(" if nil != this.%v {\n", v.Name)
+			c.buff.WriteString(key)
+			value2 := fmt.Sprintf("		this.%v.UpdateData()\n", v.Name)
+			c.buff.WriteString(value2)
+			c.buff.WriteString("	}\n")
+		}
+	}
 	c.buff.WriteString("}\n\n")
 }
 

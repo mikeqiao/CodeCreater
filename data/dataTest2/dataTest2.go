@@ -9,13 +9,13 @@ import (
 )
 
 type DataTest2 struct {
-	myData	map[uint32]*common.Test
 	mySData	map[uint64]uint32
 	uid	uint64
 	lang	string
 	name2	string
 	name3	string
 	myTest	*common.Test
+	myData	map[uint32]*common.Test
 	prefix string
 	update *data.UpdateMod
 }
@@ -32,35 +32,6 @@ func NewDataTest2(uid uint64, prefix string, update *data.UpdateMod) *DataTest2{
 		d.update.Init(table)
 	}
 	return d
-}
-
-func(this *DataTest2) CreatemyDataNewData(key uint32)(value *common.Test){
-	newdata := common.NewTest(this.uid, "this.prefixmyData.", this.update)
-	this.myData[key] = newdata
-	value = newdata
-	return
-}
-
-func(this *DataTest2) DelmyDataData(key uint32){
-	if v,ok:=this.myData[key]; ok{
-		delete(this.myData, key)
-		v.Destroy()
-	}
-}
-
-func(this *DataTest2) GetmyDataDataByKey(key uint32) (value *common.Test) {
-	if v,ok:=this.myData[key]; ok{
-		value = v
-	}
-	return
-}
-
-func(this *DataTest2) GetmyDataDataAll() (d map[uint32]*common.Test){
-	d = make(map[uint32]*common.Test)
-	for k, v := range this.myData{
-		d[k] = v
-	}
-	return
 }
 
 func(this *DataTest2) AddmySDataData(key uint64,value uint32){
@@ -136,6 +107,35 @@ func(this *DataTest2) GetmyTest() *common.Test{
 	return this.myTest
 }
 
+func(this *DataTest2) CreatemyDataNewData(key uint32)(value *common.Test){
+	newdata := common.NewTest(this.uid, "this.prefixmyData.", this.update)
+	this.myData[key] = newdata
+	value = newdata
+	return
+}
+
+func(this *DataTest2) DelmyDataData(key uint32){
+	if v,ok:=this.myData[key]; ok{
+		delete(this.myData, key)
+		v.Destroy()
+	}
+}
+
+func(this *DataTest2) GetmyDataDataByKey(key uint32) (value *common.Test) {
+	if v,ok:=this.myData[key]; ok{
+		value = v
+	}
+	return
+}
+
+func(this *DataTest2) GetmyDataDataAll() (d map[uint32]*common.Test){
+	d = make(map[uint32]*common.Test)
+	for k, v := range this.myData{
+		d[k] = v
+	}
+	return
+}
+
 func (this *DataTest2)InitData() {
 	if nil == this.update{
 		return
@@ -148,21 +148,6 @@ func (this *DataTest2)InitData() {
 		}
 		tkey := ks[0]
 		switch tkey {
-		case "myData":
-			if nil == this.myData {
-				this.myData=make(map[uint32]*common.Test)
-			}
-			if len(ks) > 2 {
-				d1 := ks[1]
-		dd1, _:=strconv.ParseUint(d1,10,64)
-		dv1:=uint32(dd1)
-			ts,ok := this.myData[dv1]
-			if !ok || nil == ts {
-				ts = common.NewTest(this.uid, "myData." + d1 + ".", this.update)
-			}
-				this.myData[dv1]= ts
-			ts.InitDataParam(ks[2:],d)
-			}
 		case "mySData":
 			if nil == this.mySData {
 				this.mySData=make(map[uint64]uint32)
@@ -191,6 +176,21 @@ func (this *DataTest2)InitData() {
 				this.myTest= common.NewTest(this.uid, "myTest.", this.update)
 			}
 			this.myTest.InitDataParam(ks[1:],d)
+		case "myData":
+			if nil == this.myData {
+				this.myData=make(map[uint32]*common.Test)
+			}
+			if len(ks) > 2 {
+				d1 := ks[1]
+		dd1, _:=strconv.ParseUint(d1,10,64)
+		dv1:=uint32(dd1)
+			ts,ok := this.myData[dv1]
+			if !ok || nil == ts {
+				ts = common.NewTest(this.uid, "myData." + d1 + ".", this.update)
+			}
+				this.myData[dv1]= ts
+			ts.InitDataParam(ks[2:],d)
+			}
 		}
 	}
 }
@@ -206,11 +206,6 @@ func (this *DataTest2)Close() {
 }
 
 func(this *DataTest2) Destroy(){
-	for _,v:=range this.myData{
-		if nil != v {
-			v.Destroy()
-		}
-	}
 	for k,_:=range this.mySData{
 		key := this.prefix + fmt.Sprint(k)
 		this.update.DelData(key)
@@ -221,6 +216,11 @@ func(this *DataTest2) Destroy(){
 	this.update.DelData(this.prefix + "name3")
  if nil != this.myTest {
 		this.myTest.Destroy()
+	}
+	for _,v:=range this.myData{
+		if nil != v {
+			v.Destroy()
+		}
 	}
 }
 
