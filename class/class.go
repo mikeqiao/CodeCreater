@@ -19,6 +19,7 @@ type Class struct {
 	funcs       []*f.Function
 	Lock        bool
 	IsData      bool
+	IsUpdate    bool
 	HaveChield  bool
 	HaveMap     bool
 	buff        *bytes.Buffer
@@ -40,6 +41,9 @@ func (c *Class) CheckName() {
 	if strings.HasPrefix(c.name, "Data") {
 		c.IsData = true
 	}
+	if strings.HasPrefix(c.name, "Update") {
+		c.IsUpdate = true
+	}
 }
 
 func (c *Class) GetBuff() (b *bytes.Buffer) {
@@ -59,12 +63,16 @@ func (c *Class) InitData(d map[string]string) {
 		if CheckBaseType(v) {
 			np.TType = 1
 			np.MTye = v
+			np.UType = v
 		} else {
 
 			is, mtype := CheckStruct(v)
 			if is {
+				ctype := strings.TrimLeft(mtype, "*common.")
+				ctype = "*" + ctype + "." + ctype
 				np.TType = 2
 				np.MTye = mtype
+				np.UType = ctype
 				c.HaveChield = true
 			} else if CheckMap(v) {
 				c.HaveMap = true
@@ -85,24 +93,32 @@ func (c *Class) InitData(d map[string]string) {
 
 func (c *Class) Init() {
 	c.InitPackage()
-	c.InitImport()
-	c.InitParam()
-	c.CreateNewFunc()
-	c.InitParamFunc()
+
+	if c.IsUpdate {
+		c.InitUpdateImport()
+		c.InitUpdateParam()
+		c.CreateNewUpdateFunc()
+		c.InitUpdateParamFunc()
+
+	} else {
+		c.InitImport()
+		c.InitParam()
+		c.CreateNewFunc()
+		c.InitParamFunc()
+	}
 	if c.IsData {
 		c.CreateInitDataFuncNew()
 		c.CreateUpdateFunc()
 		c.CreateClose()
-	} else {
+	} else if !c.IsUpdate {
 		c.CreateInitDataParamFunc()
-
 	}
 	c.CreateDestroy()
 }
 
 func (c *Class) InitPackage() {
 	str := "package " + c.name
-	if !c.IsData {
+	if !c.IsData && !c.IsUpdate {
 		str = "package common"
 	}
 	c.buff.WriteString(str)
@@ -133,6 +149,21 @@ func (c *Class) InitImport() {
 	}
 	pak4 := strconv.Quote("fmt")
 	c.buff.WriteString("	" + pak4 + "\n")
+	c.buff.WriteString(")\n\n")
+}
+
+func (c *Class) InitUpdateImport() {
+	c.buff.WriteString("import (\n")
+	//添加包含文件
+	for _, v := range c.params {
+		if 2 == v.TType {
+			ctype := strings.TrimLeft(v.MTye, "*common.")
+			path := c.Path + "/" + ctype
+			pak5 := strconv.Quote(path)
+			c.buff.WriteString("	" + pak5 + "\n")
+		}
+
+	}
 	c.buff.WriteString(")\n\n")
 }
 
@@ -172,6 +203,41 @@ func (c *Class) InitParam() {
 	c.buff.WriteString("}\n\n")
 }
 
+func (c *Class) InitUpdateParam() {
+	str := fmt.Sprintf("type %v struct {\n", c.name)
+	c.buff.WriteString(str)
+	have := false
+	for _, v := range c.params {
+		if nil != v {
+			//先判断是否是基础类型
+			ctype := v.Type
+			if 2 == v.TType {
+				ctype = strings.TrimLeft(v.MTye, "*common.")
+				ctype = "*" + ctype + "." + ctype
+			}
+
+			c.buff.WriteString("	")
+			c.buff.WriteString(v.Name)
+			c.buff.WriteString("	")
+			c.buff.WriteString(ctype)
+			c.buff.WriteString("\n")
+			if "uid" == v.Name {
+				have = true
+			}
+			if 2 == v.TType {
+
+			}
+		}
+	}
+	if !have {
+		c.buff.WriteString("	uid	uint64\n")
+	}
+
+	c.AddUpdate()
+	c.AddLock()
+	c.buff.WriteString("}\n\n")
+}
+
 func (c *Class) AddLock() {
 	if c.Lock {
 		c.buff.WriteString("	mutex sync.RWMutex\n")
@@ -179,9 +245,10 @@ func (c *Class) AddLock() {
 }
 
 func (c *Class) AddUpdate() {
-	c.buff.WriteString("	prefix string\n")
-	c.buff.WriteString("	update *data.UpdateMod\n")
-
+	if !c.IsUpdate {
+		c.buff.WriteString("	prefix string\n")
+		c.buff.WriteString("	update *data.UpdateMod\n")
+	}
 }
 
 func (c *Class) InitParamFunc() {
@@ -196,6 +263,16 @@ func (c *Class) InitParamFunc() {
 		if nil != v && 4 == v.TType {
 			c.CreateMapStructFunc(v.Name, v.Ktype, v.Vtype)
 		}
+	}
+}
+
+func (c *Class) InitUpdateParamFunc() {
+	for _, v := range c.params {
+		if nil != v && 3 != v.TType && 4 != v.TType {
+			c.CreateSetFunc(v.Name, v.UType, 2)
+			c.CreateGetFunc(v.Name, v.UType)
+		}
+
 	}
 }
 
@@ -217,6 +294,17 @@ func (c *Class) CreateNewFunc() {
 	c.buff.WriteString("		d.update.Init(table)\n")
 	c.buff.WriteString("	}\n")
 
+	c.buff.WriteString("	return d\n")
+	c.buff.WriteString("}\n\n")
+}
+
+func (c *Class) CreateNewUpdateFunc() {
+	head := fmt.Sprintf("func New%v(uid uint64) *%v{\n", c.name, c.name)
+	c.buff.WriteString(head)
+
+	body := fmt.Sprintf("	d := new(%v)\n", c.name)
+	c.buff.WriteString(body)
+	c.buff.WriteString("	d.uid= uid\n")
 	c.buff.WriteString("	return d\n")
 	c.buff.WriteString("}\n\n")
 }
@@ -951,7 +1039,7 @@ func (c *Class) CreateMapFunc(name, ktype, vtype string) {
 	c.buff.WriteString("}\n\n")
 
 	//get by key
-	head3 := fmt.Sprintf("func(this *%v) GeT%vDataByKey(key %v) (value %v) {\n", c.name, name, ktype, vtype)
+	head3 := fmt.Sprintf("func(this *%v) Get%vDataByKey(key %v) (value %v) {\n", c.name, name, ktype, vtype)
 	c.buff.WriteString(head3)
 	if c.Lock {
 		c.buff.WriteString("	this.mutex.Lock()\n")
@@ -1019,7 +1107,7 @@ func (c *Class) CreateMapStructFunc(name, ktype, vtype string) {
 	c.buff.WriteString("}\n\n")
 
 	//get by key
-	head3 := fmt.Sprintf("func(this *%v) GeT%vDataByKey(key %v) (value %v) {\n", c.name, name, ktype, vtype)
+	head3 := fmt.Sprintf("func(this *%v) Get%vDataByKey(key %v) (value %v) {\n", c.name, name, ktype, vtype)
 	c.buff.WriteString(head3)
 	if c.Lock {
 		c.buff.WriteString("	this.mutex.Lock()\n")

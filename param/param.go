@@ -7,6 +7,7 @@ type Param struct {
 	TType uint32 // 1 基础类型  2 struct 3 map 元素为基础类型 4 map 元素为struct指针类型  先不支持数组类型
 	Ktype string //map 的key值 类型
 	Vtype string //map 的元素值类型
+	UType string //只有当 struct是update 类型时候才用
 }
 
 type Server struct {

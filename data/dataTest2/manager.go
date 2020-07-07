@@ -88,7 +88,7 @@ func (this *DataTest2Manager)Update(){
 	for _ = range t {
 		this.mutex.RLock()
 		if true == this.closed{
-			this.mutex.Unlock()
+			this.mutex.RUnlock()
 			break
 		}
 		for _, v := range this.data{
@@ -96,7 +96,7 @@ func (this *DataTest2Manager)Update(){
 				v.UpdateData()
 			}
 		}
-		this.mutex.Unlock()
+		this.mutex.RUnlock()
 	}
 }
 

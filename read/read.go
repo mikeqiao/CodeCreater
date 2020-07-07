@@ -41,8 +41,7 @@ func CreateData(path string) {
 		c.Init()
 		c.ManagerInit()
 		f := new(file.File)
-
-		if c.IsData {
+		if c.IsUpdate {
 			path := class.DataPath + k
 			name := path + "/" + k + ".go"
 			name2 := path + "/" + "manager.go"
@@ -55,6 +54,14 @@ func CreateData(path string) {
 			f2.CreateFile(name2)
 			f2.Write(c.GetManagerBuff())
 			f2.Close()
+		} else if c.IsData {
+			path := class.DataPath + k
+			name := path + "/" + k + ".go"
+			f.CreateDir(path)
+
+			f.CreateFile(name)
+			f.Write(c.GetBuff())
+			f.Close()
 		} else {
 			tpath := class.DataPath + "common"
 			name := tpath + "/" + k + ".go"

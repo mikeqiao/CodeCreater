@@ -29,9 +29,11 @@
 	3 存库的节点 struct  Data开头
 		创建 InitData UpdateData Close 方法
 	4 不是data开头的struct  别的 struct 的子节点
-	
 	5 map  涉及 add get del 操作
+	6 Update 开头的为 data struct 的一个集合， 这些集合拥有一个共同的uid key值，生成一个 manager
+		生成 update  get set
 	
+		
 	自动生成服务
 	{
 		不能修改原来存在的文件
@@ -61,3 +63,11 @@
 		
 		
 	}
+	
+	关于manager
+	在一个server里面 只有一个管理属于同一类数据的 dataManager
+	里面的每个结点都是一个struct
+	struct 为更新到数据库的基本单位
+	
+	执行update 
+	

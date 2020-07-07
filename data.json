@@ -7,7 +7,7 @@
 		"dasda":"int32",	
 		"MyData":"map[uint64]uint32"
 	},
-	"dataTest2":
+	"DataTest2":
 	{
 		"Uid":"uint64",
 		"Lang":"string",
@@ -16,6 +16,9 @@
 		"MyTest":"*Test",
 		"MyData":"map[uint32]*Test",
 		"MySData":"map[uint64]uint32"
+	},
+	"UpdateData":
+	{
+		"userData":"*dataTest2"
 	}
-	
 }

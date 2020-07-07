@@ -23,6 +23,8 @@ github.com/google/go-cmp v0.3.0/go.mod h1:8QqcDgzrUqlUb/G2PQTWiueGozuR1884gddMyw
 github.com/google/go-cmp v0.3.1/go.mod h1:8QqcDgzrUqlUb/G2PQTWiueGozuR1884gddMywk6iLU=
 github.com/google/go-cmp v0.4.0/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/google/go-cmp v0.5.0/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
+github.com/mikeqiao/codecreater v0.0.0-20200707071549-484b84706eba h1:xyFcCv+rL1m/1VQ4Z+e2/HkfsC2+qGNC4QSgqHFF7+8=
+github.com/mikeqiao/codecreater v0.0.0-20200707071549-484b84706eba/go.mod h1:C5uBddlO6KIgAEKKmhmPlqeLkOkBQNJfbh9SVFeqzGA=
 github.com/mikeqiao/newworld v0.0.0-20200701084420-1ec40f95b0ff h1:x2dCdbgwnAwNtArPdt0ylBLKlkD06ptbtl59bdcqu6k=
 github.com/mikeqiao/newworld v0.0.0-20200701084420-1ec40f95b0ff/go.mod h1:RjgwJu68aJ23n6cSDr6s3td5JZY5xlOEvDhaqth6SHs=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
