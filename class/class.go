@@ -241,7 +241,7 @@ func (c *Class) InitUpdateParam() {
 	if !have {
 		c.buff.WriteString("	uid	uint64\n")
 	}
-	c.buff.WriteString("	closed	bool")
+	c.buff.WriteString("	closed	bool\n")
 	c.AddUpdate()
 	c.AddLock()
 	c.buff.WriteString("}\n\n")
