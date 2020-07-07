@@ -1198,7 +1198,7 @@ func (c *Class) ManagerCreateUpdate() {
 	c.managerbuff.WriteString("	for _ = range t {\n")
 	c.managerbuff.WriteString("		this.mutex.RLock()\n")
 	c.managerbuff.WriteString("		if true == this.closed{\n")
-	c.managerbuff.WriteString("			this.mutex.Unlock()\n")
+	c.managerbuff.WriteString("			this.mutex.RUnlock()\n")
 	c.managerbuff.WriteString("			break\n")
 	c.managerbuff.WriteString("		}\n")
 	c.managerbuff.WriteString("		for _, v := range this.data{\n")
@@ -1206,7 +1206,7 @@ func (c *Class) ManagerCreateUpdate() {
 	c.managerbuff.WriteString("				v.UpdateData()\n")
 	c.managerbuff.WriteString("			}\n")
 	c.managerbuff.WriteString("		}\n")
-	c.managerbuff.WriteString("		this.mutex.Unlock()\n")
+	c.managerbuff.WriteString("		this.mutex.RUnlock()\n")
 	c.managerbuff.WriteString("	}\n")
 	c.managerbuff.WriteString("}\n\n")
 }
