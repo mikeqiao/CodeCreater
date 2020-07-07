@@ -14,8 +14,10 @@ import (
 
 var Dmap map[string]map[string]string
 var Smap map[string]map[string]map[string]string
+var MsgMap map[string]string
 
 func InitData() {
+	MsgMap = make(map[string]string)
 	//	Dmap = make(map[string]string)
 	data, err := ioutil.ReadFile("./data.json")
 	if err != nil {
@@ -125,16 +127,23 @@ func Msg(d map[string]map[string]string, buff *bytes.Buffer) {
 	for k1, v1 := range d {
 		if req, ok := v1["Req"]; ok {
 			name := strFirstToUpper(req)
-			b := fmt.Sprintf("	m.DefaultProcessor.RegisterMsg(%v, reflect.TypeOf(proto.%v{}))\n", strconv.Quote(name), name)
-			buff.WriteString(b)
+			if _, ok := MsgMap[name]; !ok {
+
+				b := fmt.Sprintf("	m.DefaultProcessor.RegisterMsg(%v, reflect.TypeOf(proto.%v{}))\n", strconv.Quote(name), name)
+				buff.WriteString(b)
+				MsgMap[name] = name
+			}
 		} else {
 			fmt.Printf("this service have no req info, service:%v\n", k1)
 			return
 		}
 		if res, ok := v1["Res"]; ok {
 			name := strFirstToUpper(res)
-			b := fmt.Sprintf("	m.DefaultProcessor.RegisterMsg(%v,  reflect.TypeOf(proto.%v{}))\n", strconv.Quote(name), name)
-			buff.WriteString(b)
+			if _, ok := MsgMap[name]; !ok {
+				b := fmt.Sprintf("	m.DefaultProcessor.RegisterMsg(%v,  reflect.TypeOf(proto.%v{}))\n", strconv.Quote(name), name)
+				buff.WriteString(b)
+				MsgMap[name] = name
+			}
 		} else {
 			fmt.Printf("this service have no res info, service:%v\n", k1)
 			return
