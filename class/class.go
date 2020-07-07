@@ -102,7 +102,7 @@ func (c *Class) Init() {
 		c.InitUpdateParamFunc()
 
 		c.CreateUpUpdateFunc()
-		c.CreateClose()
+		c.CreateClose(1)
 	} else {
 		c.InitImport()
 		c.InitParam()
@@ -112,7 +112,7 @@ func (c *Class) Init() {
 	if c.IsData {
 		c.CreateInitDataFuncNew()
 		c.CreateUpdateFunc()
-		c.CreateClose()
+		c.CreateClose(0)
 	} else if !c.IsUpdate {
 		c.CreateInitDataParamFunc()
 	}
@@ -170,6 +170,8 @@ func (c *Class) InitUpdateImport() {
 		}
 
 	}
+	pak6 := strconv.Quote("time")
+	c.buff.WriteString("	" + pak6 + "\n")
 	c.buff.WriteString(")\n\n")
 }
 
@@ -239,7 +241,7 @@ func (c *Class) InitUpdateParam() {
 	if !have {
 		c.buff.WriteString("	uid	uint64\n")
 	}
-
+	c.buff.WriteString("	closed	bool")
 	c.AddUpdate()
 	c.AddLock()
 	c.buff.WriteString("}\n\n")
@@ -312,6 +314,7 @@ func (c *Class) CreateNewUpdateFunc() {
 	body := fmt.Sprintf("	d := new(%v)\n", c.name)
 	c.buff.WriteString(body)
 	c.buff.WriteString("	d.uid= uid\n")
+	c.buff.WriteString("	go d.UpdateData()\n")
 	c.buff.WriteString("	return d\n")
 	c.buff.WriteString("}\n\n")
 }
@@ -963,22 +966,31 @@ func (c *Class) CreateUpdateFunc() {
 func (c *Class) CreateUpUpdateFunc() {
 	head := fmt.Sprintf("func (this *%v)UpdateData() {\n", c.name)
 	c.buff.WriteString(head)
+	c.buff.WriteString("	t := time.Tick(500 * time.Millisecond)\n")
+	c.buff.WriteString("	for _ = range t {\n")
+	c.buff.WriteString("		if true == this.closed{\n")
+	c.buff.WriteString("			break\n")
+	c.buff.WriteString("		}\n")
 	for _, v := range c.params {
 		if 2 == v.TType {
-			key := fmt.Sprintf(" if nil != this.%v {\n", v.Name)
+			key := fmt.Sprintf(" 	if nil != this.%v {\n", v.Name)
 			c.buff.WriteString(key)
-			value2 := fmt.Sprintf("		this.%v.UpdateData()\n", v.Name)
+			value2 := fmt.Sprintf("			this.%v.UpdateData()\n", v.Name)
 			c.buff.WriteString(value2)
-			c.buff.WriteString("	}\n")
+			c.buff.WriteString("		}\n")
 		}
 	}
+	c.buff.WriteString("	}\n")
 	c.buff.WriteString("}\n\n")
 }
 
-func (c *Class) CreateClose() {
+func (c *Class) CreateClose(do uint32) {
 	head := fmt.Sprintf("func (this *%v)Close() {\n", c.name)
 	c.buff.WriteString(head)
 	c.buff.WriteString("	this.UpdateData()\n")
+	if 1 == do {
+		c.buff.WriteString("	this.closed = true\n")
+	}
 	c.buff.WriteString("}\n\n")
 }
 
@@ -1171,7 +1183,7 @@ func (c *Class) ManagerInit() {
 		c.ManagerCreateGetFunc()
 		c.ManagerCreateFunc()
 		c.ManagerCreateClose()
-		c.ManagerCreateUpdate()
+		//	c.ManagerCreateUpdate()
 	}
 }
 
@@ -1187,8 +1199,8 @@ func (c *Class) ManagerInitImport() {
 	pak := strconv.Quote("sync")
 	c.managerbuff.WriteString("	" + pak + "\n")
 
-	pak2 := strconv.Quote("time")
-	c.managerbuff.WriteString("	" + pak2 + "\n")
+	//	pak2 := strconv.Quote("time")
+	//	c.managerbuff.WriteString("	" + pak2 + "\n")
 	/*
 		pak3 := strconv.Quote("strconv")
 		c.managerbuff.WriteString("	" + pak3 + "\n")
@@ -1216,7 +1228,6 @@ func (c *Class) ManagerInitNew() {
 	c.managerbuff.WriteString(body)
 	str := fmt.Sprintf("	Manager.data= make(map[uint64]*%v)\n", c.name)
 	c.managerbuff.WriteString(str)
-	c.managerbuff.WriteString("	go Manager.Update()\n")
 	c.managerbuff.WriteString("}\n\n")
 }
 

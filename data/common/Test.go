@@ -7,11 +7,11 @@ import (
 )
 
 type Test struct {
-	name	string
 	uid	uint64
 	cdd	int32
 	dasda	int32
 	myData	map[uint64]uint32
+	name	string
 	prefix string
 	update *data.UpdateMod
 }
@@ -28,15 +28,6 @@ func NewTest(uid uint64, prefix string, update *data.UpdateMod) *Test{
 		d.update.Init(table)
 	}
 	return d
-}
-
-func(this *Test) Setname(value string){
-	this.update.AddData(this.prefix+"name", value)
-	this.name = value
-}
-
-func(this *Test) Getname() string{
-	return this.name
 }
 
 func(this *Test) Setuid(value uint64){
@@ -95,6 +86,15 @@ func(this *Test) GetmyDataDataAll() (d map[uint64]uint32){
 	return
 }
 
+func(this *Test) Setname(value string){
+	this.update.AddData(this.prefix+"name", value)
+	this.name = value
+}
+
+func(this *Test) Getname() string{
+	return this.name
+}
+
 func (this *Test)InitDataParam(ks []string, d string) {
 	if nil == this.update{
 		return
@@ -104,9 +104,6 @@ func (this *Test)InitDataParam(ks []string, d string) {
 		}
 		tkey := ks[0]
 		switch tkey {
-		case "name":
-		dv:=d
-			this.name= dv
 		case "uid":
 		dv, _:=strconv.ParseUint(d,10,64)
 			this.uid= dv
@@ -128,11 +125,13 @@ func (this *Test)InitDataParam(ks []string, d string) {
 		dv:=uint32(dd)
 				this.myData[dv1]= dv
 			}
+		case "name":
+		dv:=d
+			this.name= dv
 		}
 }
 
 func(this *Test) Destroy(){
-	this.update.DelData(this.prefix + "name")
 	this.update.DelData(this.prefix + "uid")
 	this.update.DelData(this.prefix + "cdd")
 	this.update.DelData(this.prefix + "dasda")
@@ -140,5 +139,6 @@ func(this *Test) Destroy(){
 		key := this.prefix + fmt.Sprint(k)
 		this.update.DelData(key)
 	}
+	this.update.DelData(this.prefix + "name")
 }
 

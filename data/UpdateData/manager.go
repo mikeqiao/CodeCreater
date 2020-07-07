@@ -2,7 +2,6 @@ package updateData
 
 import (
 	"sync"
-	"time"
 )
 
 var Manager *UpdateDataManager
@@ -16,7 +15,6 @@ type UpdateDataManager struct {
 func init(){
 	Manager := new(UpdateDataManager)
 	Manager.data= make(map[uint64]*UpdateData)
-	go Manager.Update()
 }
 
 func (this *UpdateDataManager)AddData(d *UpdateData){
@@ -80,23 +78,6 @@ func (this *UpdateDataManager)Close(){
 			v.Close()
 		}
 		delete(this.data, k)
-	}
-}
-
-func (this *UpdateDataManager)Update(){
-	t := time.Tick(500 * time.Millisecond)
-	for _ = range t {
-		this.mutex.RLock()
-		if true == this.closed{
-			this.mutex.RUnlock()
-			break
-		}
-		for _, v := range this.data{
-			if nil !=v{
-				v.UpdateData()
-			}
-		}
-		this.mutex.RUnlock()
 	}
 }
 

@@ -9,13 +9,13 @@ import (
 )
 
 type DataTest2 struct {
+	myData	map[uint32]*common.Test
+	mySData	map[uint64]uint32
 	uid	uint64
 	lang	string
 	name2	string
 	name3	string
 	myTest	*common.Test
-	myData	map[uint32]*common.Test
-	mySData	map[uint64]uint32
 	prefix string
 	update *data.UpdateMod
 }
@@ -32,50 +32,6 @@ func NewDataTest2(uid uint64, prefix string, update *data.UpdateMod) *DataTest2{
 		d.update.Init(table)
 	}
 	return d
-}
-
-func(this *DataTest2) Setuid(value uint64){
-	this.update.AddData(this.prefix+"uid", value)
-	this.uid = value
-}
-
-func(this *DataTest2) Getuid() uint64{
-	return this.uid
-}
-
-func(this *DataTest2) Setlang(value string){
-	this.update.AddData(this.prefix+"lang", value)
-	this.lang = value
-}
-
-func(this *DataTest2) Getlang() string{
-	return this.lang
-}
-
-func(this *DataTest2) Setname2(value string){
-	this.update.AddData(this.prefix+"name2", value)
-	this.name2 = value
-}
-
-func(this *DataTest2) Getname2() string{
-	return this.name2
-}
-
-func(this *DataTest2) Setname3(value string){
-	this.update.AddData(this.prefix+"name3", value)
-	this.name3 = value
-}
-
-func(this *DataTest2) Getname3() string{
-	return this.name3
-}
-
-func(this *DataTest2) SetmyTest(value *common.Test){
-	this.myTest = value
-}
-
-func(this *DataTest2) GetmyTest() *common.Test{
-	return this.myTest
 }
 
 func(this *DataTest2) CreatemyDataNewData(key uint32)(value *common.Test){
@@ -136,6 +92,50 @@ func(this *DataTest2) GetmySDataDataAll() (d map[uint64]uint32){
 	return
 }
 
+func(this *DataTest2) Setuid(value uint64){
+	this.update.AddData(this.prefix+"uid", value)
+	this.uid = value
+}
+
+func(this *DataTest2) Getuid() uint64{
+	return this.uid
+}
+
+func(this *DataTest2) Setlang(value string){
+	this.update.AddData(this.prefix+"lang", value)
+	this.lang = value
+}
+
+func(this *DataTest2) Getlang() string{
+	return this.lang
+}
+
+func(this *DataTest2) Setname2(value string){
+	this.update.AddData(this.prefix+"name2", value)
+	this.name2 = value
+}
+
+func(this *DataTest2) Getname2() string{
+	return this.name2
+}
+
+func(this *DataTest2) Setname3(value string){
+	this.update.AddData(this.prefix+"name3", value)
+	this.name3 = value
+}
+
+func(this *DataTest2) Getname3() string{
+	return this.name3
+}
+
+func(this *DataTest2) SetmyTest(value *common.Test){
+	this.myTest = value
+}
+
+func(this *DataTest2) GetmyTest() *common.Test{
+	return this.myTest
+}
+
 func (this *DataTest2)InitData() {
 	if nil == this.update{
 		return
@@ -148,23 +148,6 @@ func (this *DataTest2)InitData() {
 		}
 		tkey := ks[0]
 		switch tkey {
-		case "uid":
-		dv, _:=strconv.ParseUint(d,10,64)
-			this.uid= dv
-		case "lang":
-		dv:=d
-			this.lang= dv
-		case "name2":
-		dv:=d
-			this.name2= dv
-		case "name3":
-		dv:=d
-			this.name3= dv
-		case "myTest":
-			if nil == this.myTest {
-				this.myTest= common.NewTest(this.uid, "myTest.", this.update)
-			}
-			this.myTest.InitDataParam(ks[1:],d)
 		case "myData":
 			if nil == this.myData {
 				this.myData=make(map[uint32]*common.Test)
@@ -191,6 +174,23 @@ func (this *DataTest2)InitData() {
 		dv:=uint32(dd)
 				this.mySData[dv1]= dv
 			}
+		case "uid":
+		dv, _:=strconv.ParseUint(d,10,64)
+			this.uid= dv
+		case "lang":
+		dv:=d
+			this.lang= dv
+		case "name2":
+		dv:=d
+			this.name2= dv
+		case "name3":
+		dv:=d
+			this.name3= dv
+		case "myTest":
+			if nil == this.myTest {
+				this.myTest= common.NewTest(this.uid, "myTest.", this.update)
+			}
+			this.myTest.InitDataParam(ks[1:],d)
 		}
 	}
 }
@@ -206,13 +206,6 @@ func (this *DataTest2)Close() {
 }
 
 func(this *DataTest2) Destroy(){
-	this.update.DelData(this.prefix + "uid")
-	this.update.DelData(this.prefix + "lang")
-	this.update.DelData(this.prefix + "name2")
-	this.update.DelData(this.prefix + "name3")
- if nil != this.myTest {
-		this.myTest.Destroy()
-	}
 	for _,v:=range this.myData{
 		if nil != v {
 			v.Destroy()
@@ -221,6 +214,13 @@ func(this *DataTest2) Destroy(){
 	for k,_:=range this.mySData{
 		key := this.prefix + fmt.Sprint(k)
 		this.update.DelData(key)
+	}
+	this.update.DelData(this.prefix + "uid")
+	this.update.DelData(this.prefix + "lang")
+	this.update.DelData(this.prefix + "name2")
+	this.update.DelData(this.prefix + "name3")
+ if nil != this.myTest {
+		this.myTest.Destroy()
 	}
 }
 
