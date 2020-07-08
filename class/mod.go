@@ -80,7 +80,7 @@ func (m *Mod) CreateModHead() {
 func (m *Mod) CreateModFunc() {
 	m.Modbuff.WriteString("func Init(){\n")
 
-	body := fmt.Sprintf("	Mod := m.NewMod(0,%v)\n", strconv.Quote(m.modName))
+	body := fmt.Sprintf("	Mod = m.NewMod(0,%v)\n", strconv.Quote(m.modName))
 	m.Modbuff.WriteString(body)
 	m.Modbuff.WriteString("	Register()\n")
 	m.Modbuff.WriteString("	m.ModManager.Registe(Mod)\n")
