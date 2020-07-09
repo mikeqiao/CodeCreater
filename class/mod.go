@@ -90,7 +90,7 @@ func (m *Mod) CreateModFunc() {
 	for _, v := range m.Params {
 		if nil != v {
 			name := strconv.Quote(v.Name)
-			s := fmt.Sprintf("	Mod.Register(%v, %v, proto.%v{}, proto.%v{})\n", name, v.Name, strFirstToUpper(v.Req), strFirstToUpper(v.Res))
+			s := fmt.Sprintf("	Mod.Register(%v, %v, &proto.%v{}, &proto.%v{})\n", name, v.Name, strFirstToUpper(v.Req), strFirstToUpper(v.Res))
 			m.Modbuff.WriteString(s)
 		}
 	}
