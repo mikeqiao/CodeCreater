@@ -140,7 +140,7 @@ func Msg(d map[string]map[string]string, buff *bytes.Buffer) {
 			name := strFirstToUpper(req)
 			if _, ok := MsgMap[name]; !ok {
 
-				b := fmt.Sprintf("	m.DefaultProcessor.RegisterMsg(%v, reflect.TypeOf(proto.%v{}))\n", strconv.Quote(name), name)
+				b := fmt.Sprintf("	m.DefaultProcessor.RegisterMsg(%v, reflect.TypeOf(&proto.%v{}))\n", strconv.Quote(name), name)
 				buff.WriteString(b)
 				MsgMap[name] = name
 			}
@@ -151,7 +151,7 @@ func Msg(d map[string]map[string]string, buff *bytes.Buffer) {
 		if res, ok := v1["Res"]; ok {
 			name := strFirstToUpper(res)
 			if _, ok := MsgMap[name]; !ok {
-				b := fmt.Sprintf("	m.DefaultProcessor.RegisterMsg(%v,  reflect.TypeOf(proto.%v{}))\n", strconv.Quote(name), name)
+				b := fmt.Sprintf("	m.DefaultProcessor.RegisterMsg(%v,  reflect.TypeOf(&proto.%v{}))\n", strconv.Quote(name), name)
 				buff.WriteString(b)
 				MsgMap[name] = name
 			}
